@@ -1,0 +1,91 @@
+# POST /api/ai/translate - Translation Agent Endpoint (FR-020)
+openapi: "3.1.0"
+info:
+  title: AI Translate API
+  version: "1.0.0"
+
+paths:
+  /api/ai/translate:
+    post:
+      summary: Translate chapter content to Urdu
+      description: |
+        Routes through the AI Orchestrator to the Translation Agent.
+        No authentication required. Rate limited to 20 requests/hour per IP.
+        Supports two modes:
+        - Chapter-level: provide chapter_slug to translate from curriculum
+        - Direct content: provide content field (e.g., personalized markdown)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                chapter_slug:
+                  type: string
+                  description: "Docusaurus slug. Required if content is not provided."
+                  example: "module-1-ros2/01-chapter"
+                content:
+                  type: string
+                  description: "Direct markdown content to translate. If provided, chapter_slug is used only for cache key."
+                target_language:
+                  type: string
+                  default: "urdu"
+                  description: "Target language (currently only 'urdu' supported)"
+      responses:
+        "200":
+          description: Translated content (cached or freshly generated)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "envelope.yaml#/components/schemas/AIEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [translated_markdown, content_version, target_language, source_language]
+                        properties:
+                          translated_markdown:
+                            type: string
+                            description: "Translated chapter content in Markdown"
+                          content_version:
+                            type: string
+                          prompt_version:
+                            type: string
+                          target_language:
+                            type: string
+                            example: "urdu"
+                          source_language:
+                            type: string
+                            example: "english"
+        "400":
+          description: Neither chapter_slug nor content provided
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"
+        "404":
+          description: Chapter not found in curriculum
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"
+        "422":
+          description: Skill processing failure
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded (20/hour per IP)
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"
+        "504":
+          description: Agent execution timeout
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"

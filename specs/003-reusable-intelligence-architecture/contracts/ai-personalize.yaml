@@ -1,0 +1,98 @@
+# POST /api/ai/personalize - Personalization Agent Endpoint (FR-019)
+openapi: "3.1.0"
+info:
+  title: AI Personalize API
+  version: "1.0.0"
+
+paths:
+  /api/ai/personalize:
+    post:
+      summary: Personalize chapter content for authenticated user
+      description: |
+        Routes through the AI Orchestrator to the Personalization Agent.
+        Requires authentication. Rate limited to 10 requests/hour per user.
+        Returns personalized markdown adapted to the user's profile.
+      security:
+        - sessionCookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [chapter_slug]
+              properties:
+                chapter_slug:
+                  type: string
+                  description: "Docusaurus slug (e.g., 'module-1-ros2/01-chapter')"
+                  example: "module-1-ros2/01-chapter"
+      responses:
+        "200":
+          description: Personalized content (cached or freshly generated)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "envelope.yaml#/components/schemas/AIEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [personalized_markdown, content_version, profile_used]
+                        properties:
+                          personalized_markdown:
+                            type: string
+                            description: "Personalized chapter content in Markdown"
+                          content_version:
+                            type: string
+                            description: "SHA-256 hash of source content"
+                          prompt_version:
+                            type: string
+                            description: "SHA-256 hash of prompt template"
+                          profile_used:
+                            type: object
+                            description: "User profile snapshot used for personalization"
+                            properties:
+                              software_background:
+                                type: string
+                              hardware_background:
+                                type: string
+                              robotics_knowledge:
+                                type: string
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"
+        "404":
+          description: Chapter not found in curriculum
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"
+        "422":
+          description: Skill processing failure (e.g., content exceeds token limits)
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded (10/hour per user)
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"
+        "504":
+          description: Agent execution timeout
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: physical-ai.session_token

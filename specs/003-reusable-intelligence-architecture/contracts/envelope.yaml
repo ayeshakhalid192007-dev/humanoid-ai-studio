@@ -1,0 +1,66 @@
+# Common AI Response Envelope Schema (FR-022)
+# All /api/ai/* endpoints return this wrapper
+openapi: "3.1.0"
+info:
+  title: AI Envelope Schema
+  version: "1.0.0"
+
+components:
+  schemas:
+    GenerationMetadata:
+      type: object
+      required: [model, token_count, latency_ms, prompt_version]
+      properties:
+        model:
+          type: string
+          example: "gpt-4o-mini"
+        token_count:
+          type: integer
+          example: 1250
+        latency_ms:
+          type: integer
+          example: 3200
+        prompt_version:
+          type: string
+          description: "SHA-256 hash (16 chars) of the prompt template used"
+          example: "a1b2c3d4e5f6g7h8"
+
+    AIEnvelope:
+      type: object
+      required: [agent_type, skills_used, cached, grounding_policy, generation_metadata, data]
+      properties:
+        agent_type:
+          type: string
+          enum: [personalization, translation, rag_chat]
+        skills_used:
+          type: array
+          items:
+            type: string
+          example: ["context_boundary", "hallucination_prevention", "markdown_preservation"]
+        cached:
+          type: boolean
+          example: false
+        grounding_policy:
+          type: string
+          enum: [strict_grounding, structural_fidelity, semantic_fidelity]
+        generation_metadata:
+          $ref: "#/components/schemas/GenerationMetadata"
+        data:
+          type: object
+          description: "Agent-specific payload. Shape varies by agent_type."
+
+    ErrorResponse:
+      type: object
+      required: [error, detail]
+      properties:
+        error:
+          type: string
+          example: "validation_error"
+        detail:
+          type: string
+          example: "Invalid chapter slug format"
+        skill_failed:
+          type: string
+          nullable: true
+          description: "Name of the skill that failed (if applicable)"
+          example: "markdown_preservation"

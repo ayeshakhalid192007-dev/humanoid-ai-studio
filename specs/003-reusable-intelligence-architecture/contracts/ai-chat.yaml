@@ -1,0 +1,151 @@
+# POST /api/ai/chat and /api/ai/chat/stream - RAG Chat Agent Endpoints (FR-021, FR-028)
+openapi: "3.1.0"
+info:
+  title: AI Chat API
+  version: "1.0.0"
+
+paths:
+  /api/ai/chat:
+    post:
+      summary: RAG chat query (non-streaming)
+      description: |
+        Routes through the AI Orchestrator to the RAG Reasoning Agent.
+        Optional authentication (session tracked if logged in).
+        Rate limited to 20 requests/hour per user/IP.
+        Returns a citation-aware answer grounded in curriculum context.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties:
+                query:
+                  type: string
+                  description: "User's question"
+                  example: "What is a ROS 2 node?"
+                mode:
+                  type: string
+                  enum: [full_book, selected_text]
+                  default: "full_book"
+                  description: "Retrieval mode"
+                selected_text:
+                  type: string
+                  description: "Required if mode is 'selected_text'. The highlighted text to answer from."
+                session_id:
+                  type: string
+                  format: uuid
+                  description: "Chat session ID for conversation continuity"
+      responses:
+        "200":
+          description: RAG-grounded answer with citations
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "envelope.yaml#/components/schemas/AIEnvelope"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [answer, query, citations]
+                        properties:
+                          answer:
+                            type: string
+                            description: "AI-generated answer grounded in curriculum"
+                          query:
+                            type: string
+                            description: "Original user query"
+                          citations:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                module:
+                                  type: string
+                                lesson:
+                                  type: string
+                                section:
+                                  type: string
+                                score:
+                                  type: number
+                          retrieved_chunks:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                text:
+                                  type: string
+                                module:
+                                  type: string
+                                lesson:
+                                  type: string
+                                score:
+                                  type: number
+                          session_id:
+                            type: string
+                            format: uuid
+        "400":
+          description: Invalid request (missing query, invalid mode)
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"
+        "422":
+          description: Skill processing failure
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"
+        "504":
+          description: Agent execution timeout
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"
+
+  /api/ai/chat/stream:
+    post:
+      summary: RAG chat query (SSE streaming)
+      description: |
+        Same as /api/ai/chat but returns Server-Sent Events stream.
+        Pre-processing skills run before streaming starts.
+        Post-processing skills validate the accumulated response after stream ends.
+        Tokens are delivered incrementally in real-time.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/paths/~1api~1ai~1chat/post/requestBody/content/application~1json/schema"
+      responses:
+        "200":
+          description: SSE stream of answer tokens
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: |
+                  SSE events:
+                  - data: {"token": "word"} — incremental token
+                  - data: {"done": true, "envelope": {...}} — final event with full AIEnvelope
+                  - data: {"error": "message"} — error event
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "envelope.yaml#/components/schemas/ErrorResponse"

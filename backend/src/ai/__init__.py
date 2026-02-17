@@ -1,0 +1,1 @@
+"""Reusable intelligence architecture module."""
