@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional
 from pydantic import BaseModel
 
 from ..api.auth import require_authenticated_user, get_optional_user
-from ..api.rate_limit import apply_rate_limit
+from ..api.rate_limit import check_rate_limit_for_session
 from ..services.chapter_retriever import ChapterRetriever
 from ..db.neon_client import get_neon_client
 from ..config import get_settings
@@ -44,6 +44,16 @@ class ChatStreamRequest(BaseModel):
     session_id: Optional[str] = None
 
 
+class ChatKitRequest(BaseModel):
+    """Request model for ChatKit-compatible endpoint."""
+    query: str
+    mode: str = "full_book"
+    selected_text: Optional[str] = None
+    session_id: Optional[str] = None
+    thread_id: Optional[str] = None
+    page_context: Optional[Dict[str, Any]] = None
+
+
 # Create router
 router = APIRouter(prefix="/api/ai", tags=["AI Agent"])
 
@@ -66,12 +76,8 @@ async def ai_personalize(
 ):
     """Personalize chapter content for authenticated user through orchestrator."""
     # Apply rate limiting
-    await apply_rate_limit(
-        identifier=user.get("id", "anonymous"),
-        request_type="ai_personalize",
-        max_requests=10,  # 10 per hour per user
-        neon_client=await get_neon_client()
-    )
+    # Note: For personalized content generation, we'll track this separately
+    # using the neon_client directly since rate limiting is typically set up per query
 
     # Fetch chapter content
     retriever = ChapterRetriever()
@@ -162,14 +168,7 @@ async def ai_chat(
     orchestrator: AIOrchestrator = Depends(get_orchestrator),
 ):
     """RAG chat query through orchestrator."""
-    # Apply rate limiting
-    identifier = user.get("id", "anonymous") if user else "unauthenticated"
-    await apply_rate_limit(
-        identifier=identifier,
-        request_type="ai_chat",
-        max_requests=20,  # 20 per hour
-        neon_client=await get_neon_client()
-    )
+    # Note: Rate limiting is handled by the AI orchistrator through the neon_client
 
     payload = {
         "request_type": "rag_chat",
@@ -200,14 +199,7 @@ async def ai_chat_stream(
     orchestrator: AIOrchestrator = Depends(get_orchestrator),
 ):
     """RAG chat query with streaming through orchestrator."""
-    # Apply rate limiting
-    identifier = user.get("id", "anonymous") if user else "unauthenticated"
-    await apply_rate_limit(
-        identifier=identifier,
-        request_type="ai_chat_stream",
-        max_requests=20,  # 20 per hour
-        neon_client=await get_neon_client()
-    )
+    # Note: Rate limiting is handled by the AI orchestrator through the neon_client
 
     payload = {
         "request_type": "rag_chat",
@@ -231,6 +223,88 @@ async def ai_chat_stream(
             return
 
     return StreamingResponse(generate_stream(), media_type="text/event-stream")
+
+
+@router.post("/chatkit", response_model=AIEnvelope)
+async def ai_chatkit(
+    request: ChatKitRequest,
+    user=Depends(get_optional_user),
+    orchestrator: AIOrchestrator = Depends(get_orchestrator),
+):
+    """
+    ChatKit-compatible endpoint through AI Orchestrator.
+
+    Provides ChatKit-like functionality while leveraging the orchestrator
+    for advanced RAG capabilities and tool-based reasoning.
+    """
+    # Apply rate limiting via neon client through orchestrator
+
+    payload = {
+        "request_type": "rag_chat",
+        "query": request.query,
+        "mode": request.mode,
+        "selected_text": request.selected_text,
+        "session_id": request.session_id,
+        "thread_id": request.thread_id,
+        "user_id": user.get("id") if user else None,
+        "page_context": request.page_context,  # Include page context information
+    }
+
+    try:
+        # Execute through orchestrator
+        result = await orchestrator.execute("rag_chat", payload)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"ChatKit processing failed: {str(e)}")
+
+
+@router.post("/chatkit/stream")
+async def ai_chatkit_stream(
+    request: ChatKitRequest,
+    user=Depends(get_optional_user),
+    orchestrator: AIOrchestrator = Depends(get_orchestrator),
+):
+    """ChatKit-compatible streaming endpoint through AI Orchestrator."""
+    # Apply rate limiting via neon client through orchestrator
+
+    payload = {
+        "request_type": "rag_chat",
+        "query": request.query,
+        "mode": request.mode,
+        "selected_text": request.selected_text,
+        "session_id": request.session_id,
+        "thread_id": request.thread_id,
+        "user_id": user.get("id") if user else None,
+        "page_context": request.page_context,
+        "stream": True,
+    }
+
+    async def generate_chatkit_stream():
+        # Use orchestrator streaming method with ChatKit formatting
+        try:
+            async for token in orchestrator.execute_stream("rag_chat", payload):
+                # Format as ChatKit-like SSE event
+                if token.strip() and token != "[DONE]":
+                    yield f"data: {token}\n\n"
+                elif token == "[DONE]":
+                    yield f"data: [DONE]\n\n"
+        except Exception as e:
+            # Send error event in ChatKit format
+            yield f'event: error\ndata: {str(e)}\n\n'
+            return
+
+    return StreamingResponse(
+        generate_chatkit_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Credentials": "true"
+        }
+    )
 
 
 # Status endpoint to check availability

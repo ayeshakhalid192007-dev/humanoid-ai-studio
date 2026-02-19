@@ -1,0 +1,341 @@
+openapi: 3.0.3
+info:
+  title: RAG Chatbot API - Chat Endpoint
+  description: |
+    API specification for the POST /chat endpoint of the RAG chatbot backend.
+
+    This endpoint processes student questions about curriculum content using the RAG
+    (Retrieval-Augmented Generation) pipeline:
+    1. Embed the query using OpenAI text-embedding-3-small
+    2. Retrieve top-5 relevant curriculum chunks from Qdrant (cosine similarity > 0.7)
+    3. Generate answer using OpenAI gpt-4o-mini with retrieved context
+    4. Log conversation turn to Neon Postgres
+    5. Return answer with citations and retrieved chunks
+
+    **Requirements**: FR-034 (FastAPI), FR-038 (Embeddings), FR-039 (Retrieval),
+    FR-041 (Answer generation), FR-043 (Citations), FR-046 (Input sanitization),
+    FR-047 (Logging), FR-048 (Rate limiting)
+  version: 1.0.0
+  contact:
+    name: Physical AI Platform Team
+    url: https://github.com/yourusername/physical-ai-platform
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://your-backend.railway.app
+    description: Production backend (Railway deployment)
+  - url: http://localhost:8000
+    description: Local development server
+
+tags:
+  - name: chat
+    description: RAG chatbot query endpoints
+
+paths:
+  /chat:
+    post:
+      summary: Submit a chatbot query
+      description: |
+        Process a student's question about curriculum content using RAG pipeline.
+
+        **Flow**:
+        1. Validate session_id and check rate limit (20 queries/hour per session)
+        2. Sanitize query input (strip special tokens, validate length)
+        3. Embed query using OpenAI text-embedding-3-small
+        4. Retrieve top-5 curriculum chunks from Qdrant (score > 0.7)
+        5. Generate answer with OpenAI gpt-4o-mini using retrieved context
+        6. Extract citations from retrieved chunks
+        7. Log conversation turn to Neon Postgres
+        8. Return answer with citations and retrieved chunks
+
+        **Performance**:
+        - Target latency: <3s for 95th percentile (SC-020)
+        - FastAPI overhead: <200ms (FR-050)
+
+        **Cost**: ~$0.02 per query (embedding $0.0001 + chat $0.015)
+      operationId: submitChatQuery
+      tags:
+        - chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+            examples:
+              basic_query:
+                summary: Basic curriculum question
+                value:
+                  query: "What are URDF joint limits?"
+                  session_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+              query_with_page_context:
+                summary: Query with current page context
+                value:
+                  query: "Can you explain this code snippet?"
+                  session_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  page_context: "https://yourdomain.github.io/docs/module1/lesson3"
+              query_with_selection:
+                summary: Query about highlighted text
+                value:
+                  query: "What does this mean?"
+                  session_id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  page_context: "https://yourdomain.github.io/docs/module2/lesson5"
+                  selection_text: "ros2 launch nav2_bringup navigation_launch.py"
+      responses:
+        '200':
+          description: Successful response with answer and citations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+              examples:
+                successful_answer:
+                  summary: Successful answer with citations
+                  value:
+                    answer: "According to Module 1, Lesson 3, URDF joint limits define the range of motion for each joint in a robot. They specify minimum and maximum position values (for revolute and prismatic joints) and maximum velocity/effort constraints. For example, a revolute joint might have <limit lower=\"-1.57\" upper=\"1.57\" effort=\"10\" velocity=\"3.14\"/> which restricts rotation to ±90 degrees."
+                    citations:
+                      - module: "1"
+                        lesson: "lesson-3"
+                        section: "Joint Constraints and Workspace"
+                        url: "https://yourdomain.github.io/docs/module1/lesson3#joints"
+                      - module: "1"
+                        lesson: "lesson-3"
+                        section: "URDF Syntax Reference"
+                        url: "https://yourdomain.github.io/docs/module1/lesson3#urdf-syntax"
+                    retrieved_chunks:
+                      - text: "URDF joints define the kinematic relationships between rigid bodies. The <joint> element specifies the joint type (revolute, prismatic, continuous, fixed, floating, planar) and constraints..."
+                        score: 0.89
+                      - text: "Joint limits in URDF use the <limit> tag with attributes: lower (minimum position), upper (maximum position), effort (maximum force/torque), velocity (maximum speed). These limits are enforced by ROS 2 controllers..."
+                        score: 0.85
+        '400':
+          description: Bad request - invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                query_too_long:
+                  summary: Query exceeds 500 character limit
+                  value:
+                    detail: "Query must be between 1 and 500 characters"
+                    error_code: "QUERY_LENGTH_INVALID"
+                invalid_session_id:
+                  summary: Malformed session ID
+                  value:
+                    detail: "Invalid session_id format. Must be valid UUIDv4"
+                    error_code: "INVALID_SESSION_ID"
+                empty_query:
+                  summary: Empty query string
+                  value:
+                    detail: "Query cannot be empty"
+                    error_code: "QUERY_EMPTY"
+        '429':
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              description: Seconds until rate limit window resets
+              schema:
+                type: integer
+                example: 1800
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                rate_limit_exceeded:
+                  summary: Session has exceeded 20 queries per hour
+                  value:
+                    detail: "Rate limit: 20 queries/hour. Try again later."
+                    error_code: "RATE_LIMIT_EXCEEDED"
+                    retry_after: 1800
+        '503':
+          description: Service temporarily unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                database_suspended:
+                  summary: Neon Postgres auto-suspended (compute exhausted)
+                  value:
+                    detail: "Chatbot temporarily offline (database maintenance)."
+                    error_code: "DATABASE_UNAVAILABLE"
+                openai_rate_limit:
+                  summary: OpenAI API rate limit hit
+                  value:
+                    detail: "High demand. Estimated wait: 30 seconds."
+                    error_code: "LLM_RATE_LIMIT"
+                    retry_after: 30
+                qdrant_unavailable:
+                  summary: Qdrant Cloud outage
+                  value:
+                    detail: "Search service temporarily unavailable."
+                    error_code: "VECTOR_DB_UNAVAILABLE"
+
+components:
+  schemas:
+    ChatRequest:
+      type: object
+      required:
+        - query
+        - session_id
+      properties:
+        query:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: |
+            Student's question about curriculum content.
+            Input sanitization applied:
+            - Strip special tokens: <|endoftext|>, <|im_sep|>
+            - Remove markdown injection attempts
+            - Validate UTF-8 encoding
+          example: "What are URDF joint limits?"
+        session_id:
+          type: string
+          format: uuid
+          description: |
+            Browser session identifier from sessionStorage.
+            Generated client-side via crypto.randomUUID() on first chatbot load.
+            Used for rate limiting (20 queries/hour per session).
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        page_context:
+          type: string
+          format: uri
+          maxLength: 500
+          description: |
+            Optional: Current book page URL when query was submitted.
+            Used for contextual retrieval and analytics.
+          example: "https://yourdomain.github.io/docs/module1/lesson3"
+          nullable: true
+        selection_text:
+          type: string
+          maxLength: 500
+          description: |
+            Optional: Text highlighted by student before submitting query.
+            Used as additional context for retrieval (text-selection-based queries).
+          example: "ros2 launch nav2_bringup navigation_launch.py"
+          nullable: true
+
+    ChatResponse:
+      type: object
+      required:
+        - answer
+        - citations
+        - retrieved_chunks
+      properties:
+        answer:
+          type: string
+          maxLength: 2000
+          description: |
+            LLM-generated answer based on retrieved curriculum content.
+            Includes citations formatted as "According to Module X, Lesson Y...".
+            Truncated if exceeds 2000 characters.
+          example: "According to Module 1, Lesson 3, URDF joint limits define the range of motion..."
+        citations:
+          type: array
+          description: |
+            Source citations extracted from retrieved chunks.
+            Sorted by relevance score (highest first).
+            Max 5 citations (one per retrieved chunk).
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/Citation'
+        retrieved_chunks:
+          type: array
+          description: |
+            Preview of top-5 curriculum chunks retrieved for context.
+            Used for debugging and transparency.
+            Text truncated to 200 chars per chunk.
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/RetrievedChunk'
+
+    Citation:
+      type: object
+      required:
+        - module
+        - lesson
+        - section
+        - url
+      properties:
+        module:
+          type: string
+          pattern: '^[1-4]$'
+          description: Module number (1-4)
+          example: "1"
+        lesson:
+          type: string
+          pattern: '^lesson-\d+$'
+          description: Lesson identifier within module
+          example: "lesson-3"
+        section:
+          type: string
+          maxLength: 200
+          description: Section/heading title where content was found
+          example: "Joint Constraints and Workspace"
+        url:
+          type: string
+          format: uri
+          description: Clickable link to exact book section (includes anchor)
+          example: "https://yourdomain.github.io/docs/module1/lesson3#joints"
+
+    RetrievedChunk:
+      type: object
+      required:
+        - text
+        - score
+      properties:
+        text:
+          type: string
+          maxLength: 200
+          description: |
+            Preview of retrieved curriculum chunk text.
+            Truncated to 200 characters (full text used for LLM context).
+          example: "URDF joints define the kinematic relationships between rigid bodies. The <joint> element specifies..."
+        score:
+          type: number
+          format: float
+          minimum: 0.7
+          maximum: 1.0
+          description: |
+            Cosine similarity score between query embedding and chunk embedding.
+            Threshold: must be >0.7 to be included (FR-039).
+          example: 0.89
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+        - error_code
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message
+          example: "Rate limit: 20 queries/hour. Try again later."
+        error_code:
+          type: string
+          enum:
+            - QUERY_LENGTH_INVALID
+            - QUERY_EMPTY
+            - INVALID_SESSION_ID
+            - RATE_LIMIT_EXCEEDED
+            - DATABASE_UNAVAILABLE
+            - LLM_RATE_LIMIT
+            - VECTOR_DB_UNAVAILABLE
+            - INTERNAL_ERROR
+          description: Machine-readable error code for client handling
+          example: "RATE_LIMIT_EXCEEDED"
+        retry_after:
+          type: integer
+          description: |
+            Optional: Seconds until client should retry.
+            Present for 429 (rate limit) and 503 (temporary unavailability) responses.
+          example: 1800
+          nullable: true
+
+  securitySchemes: {}
+
+security: []

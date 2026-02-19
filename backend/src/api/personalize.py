@@ -94,12 +94,22 @@ async def personalize_chapter(
     # Fetch user profile from auth-server
     user_profile = await _fetch_user_profile(request)
 
+    # Fetch chapter content to get content version
+    content_version = ""
+    if chapter_slug:
+        from ..services.chapter_retriever import ChapterRetriever
+        retriever = ChapterRetriever()
+        chapter_data = await retriever.get_chapter_content(chapter_slug)
+        if chapter_data:
+            content_version = chapter_data.get("version", "")
+
     # Build payload for orchestrator
     payload = {
         "request_type": "personalization",
         "chapter_slug": chapter_slug,
         "user_id": user.user_id,
         "user_profile": user_profile,
+        "content_version": content_version,
     }
 
     try:

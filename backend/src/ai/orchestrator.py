@@ -90,11 +90,31 @@ class AIOrchestrator:
                         "details": str(e)
                     })
 
-        # Execute the agent
-        response = await agent.execute(request)
+        # Execute the agent with error handling
+        try:
+            response = await agent.execute(request)
+            # Update context with AI response for post-processing
+            context.ai_response = response.content
+        except Exception as e:
+            # Log the error for debugging
+            import traceback
+            error_msg = f"Agent execution failed: {str(e)}"
+            print(f"ERROR in orchestrator: {error_msg}")
+            print(f"Traceback: {traceback.format_exc()}")
 
-        # Update context with AI response for post-processing
-        context.ai_response = response.content
+            # Create an error response instead of crashing
+            response = AgentResponse(
+                agent_type=agent.get_agent_type(),
+                content=f"Error: The {agent.get_agent_type()} agent encountered an issue: {str(e)}",
+                cached=False,
+                model="",
+                token_count=0,
+                latency_ms=0,
+                grounding_policy=agent.get_grounding_policy(),
+                agent_data={}
+            )
+            # Set a basic error response in context
+            context.ai_response = response.content
 
         # Execute post-processing skills
         for skill in skills:
@@ -135,18 +155,22 @@ class AIOrchestrator:
         # Calculate total latency
         total_latency = int((time.time() - start_time) * 1000)
 
-        # Log execution
-        await self._log_execution(
-            agent_type=agent.get_agent_type(),
-            grounding_policy=agent.get_grounding_policy(),
-            skills_used=skills_executed,
-            skills_detail=skill_details,
-            token_count=response.token_count,
-            model=response.model,
-            latency_ms=total_latency,
-            cached=response.cached,
-            request_payload=payload
-        )
+        # Log execution with error handling
+        try:
+            await self._log_execution(
+                agent_type=agent.get_agent_type(),
+                grounding_policy=agent.get_grounding_policy(),
+                skills_used=skills_executed,
+                skills_detail=skill_details,
+                token_count=response.token_count,
+                model=response.model,
+                latency_ms=total_latency,
+                cached=response.cached,
+                request_payload=payload
+            )
+        except Exception as log_error:
+            print(f"ERROR logging execution: {str(log_error)}")
+            # Don't let logging errors break the response
 
         # Build return envelope
         envelope_data = {**response.agent_data}
@@ -253,22 +277,32 @@ class AIOrchestrator:
         except NotImplementedError:
             # If streaming is not implemented for the agent
             yield "Streaming not implemented for this agent type"
+        except Exception as e:
+            # Handle any other errors during streaming
+            import traceback
+            print(f"ERROR in streaming execution: {str(e)}")
+            print(f"Traceback: {traceback.format_exc()}")
+            yield f"Error during streaming: {str(e)}"
 
         # Calculate total latency
         total_latency = int((time.time() - start_time) * 1000)
 
-        # Log execution
-        await self._log_execution(
-            agent_type=agent.get_agent_type(),
-            grounding_policy=agent.get_grounding_policy(),
-            skills_used=skills_executed,
-            skills_detail=skill_details,
-            token_count=0,  # Not applicable for streaming
-            model="",  # Not applicable for streaming
-            latency_ms=total_latency,
-            cached=False,  # Not applicable for streaming
-            request_payload=payload
-        )
+        # Log execution with error handling
+        try:
+            await self._log_execution(
+                agent_type=agent.get_agent_type(),
+                grounding_policy=agent.get_grounding_policy(),
+                skills_used=skills_executed,
+                skills_detail=skill_details,
+                token_count=0,  # Not applicable for streaming
+                model="",  # Not applicable for streaming
+                latency_ms=total_latency,
+                cached=False,  # Not applicable for streaming
+                request_payload=payload
+            )
+        except Exception as log_error:
+            print(f"ERROR logging streaming execution: {str(log_error)}")
+            # Don't let logging errors break the streaming response
 
     def _build_agent_request(self, request_type: str, payload: Dict[str, Any]) -> AgentRequest:
         """Build an AgentRequest from the payload."""
@@ -284,6 +318,8 @@ class AIOrchestrator:
             session_id=payload.get('session_id'),
             mode=payload.get('mode'),
             selected_text=payload.get('selected_text'),
+            content_version=payload.get('content_version'),
+            prompt_version=payload.get('prompt_version'),
             stream=payload.get('stream', False)
         )
 

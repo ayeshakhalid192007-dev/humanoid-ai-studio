@@ -100,16 +100,27 @@ async def translate_chapter(
             headers={"Retry-After": "3600"},
         )
 
+    # Fetch chapter content to get content version if translating a chapter (not custom content)
+    content_version = ""
+    if chapter_slug and not body.content:  # Only fetch if translating chapter, not custom content
+        from ..services.chapter_retriever import ChapterRetriever
+        retriever = ChapterRetriever()
+        chapter_data = await retriever.get_chapter_content(chapter_slug)
+        if chapter_data:
+            content_version = chapter_data.get("version", "")
+
     # Build payload for orchestrator
     payload = {
         "request_type": "translation",
         "chapter_slug": chapter_slug,
         "content": body.content,  # May be None, the agent will fetch if needed
+        "content_version": content_version,
     }
 
     if body.content:
         # For custom content translation, specify the content directly
         payload["content"] = body.content
+        payload["content_version"] = "custom"  # Use "custom" for custom content
 
     try:
         # Execute through orchestrator

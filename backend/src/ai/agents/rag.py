@@ -8,7 +8,7 @@ from ..base import BaseAgent, AgentRequest, AgentResponse
 from ...services.retriever import Retriever
 from ...services.embedder import Embedder
 from ...services.chapter_retriever import ChapterRetriever
-from ..registry import PromptRegistry
+from ..prompts.registry import PromptRegistry
 from ...db.neon_client import NeonClient, get_neon_client
 from ...config import get_settings
 import hashlib
@@ -93,7 +93,7 @@ class RAGReasoningAgent(BaseAgent):
         # Make the API call
         try:
             response = await self.client.chat.completions.create(
-                model=self.settings.OPENAI_MODEL if self.settings.OPENAI_MODEL else "gpt-4o-mini",
+                model=self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else "gpt-4o-mini",
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
@@ -192,7 +192,7 @@ class RAGReasoningAgent(BaseAgent):
             # Get the async client instance
             async_client = self.client
             stream = await async_client.chat.completions.create(
-                model=self.settings.OPENAI_MODEL if self.settings.OPENAI_MODEL else "gpt-4o-mini",
+                model=self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else "gpt-4o-mini",
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,

@@ -1,0 +1,44 @@
+name: Deploy Backend to Railway
+
+# Note: Railway can auto-deploy via GitHub integration (recommended).
+# This workflow documents the deployment process for manual triggers.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-info:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Railway Deployment Instructions
+        run: |
+          echo "🚂 Backend Deployment to Railway"
+          echo "=================================="
+          echo ""
+          echo "Railway auto-deploys from GitHub when configured. To set up:"
+          echo ""
+          echo "1. Connect your GitHub repository to Railway:"
+          echo "   - Visit https://railway.app"
+          echo "   - Click 'New Project' → 'Deploy from GitHub repo'"
+          echo "   - Select this repository"
+          echo "   - Set root directory to 'backend'"
+          echo ""
+          echo "2. Configure environment variables in Railway dashboard:"
+          echo "   - OPENAI_API_KEY"
+          echo "   - QDRANT_URL"
+          echo "   - QDRANT_API_KEY"
+          echo "   - NEON_DATABASE_URL"
+          echo "   - BACKEND_CORS_ORIGINS (add your GitHub Pages URL)"
+          echo ""
+          echo "3. Railway will auto-deploy on every push to main branch"
+          echo ""
+          echo "4. Get your Railway URL from dashboard and update:"
+          echo "   - book/src/components/ChatbotWidget config"
+          echo "   - BACKEND_CORS_ORIGINS to include book URL"
+          echo ""
+          echo "✅ Deployment will happen automatically"
+          echo ""
+          echo "Manual deployment:"
+          echo "  railway login"
+          echo "  cd backend"
+          echo "  railway up"

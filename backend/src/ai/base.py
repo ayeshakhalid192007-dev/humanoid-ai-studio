@@ -70,6 +70,8 @@ class AgentRequest:
     session_id: Optional[str]  # For RAG chat session tracking
     mode: Optional[str]  # "full_book" | "selected_text" (RAG chat)
     selected_text: Optional[str]  # For selected-text mode (RAG chat)
+    content_version: Optional[str] = None  # Version identifier for content caching
+    prompt_version: Optional[str] = None  # Version identifier for prompt caching
     stream: bool = False  # Whether to stream response
 
 

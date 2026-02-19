@@ -1,0 +1,33 @@
+{
+  "name": "physical-ai-auth-server",
+  "version": "2.0.0",
+  "description": "Better Auth server for Physical AI Platform (Neon Postgres)",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "db:migrate": "npx @better-auth/cli migrate",
+    "db:profiles": "node scripts/create-profiles-table.js",
+    "db:migrate-users": "node scripts/migrate-to-better-auth.js",
+    "db:migrate-freetext": "node scripts/migrate-profiles-freetext.js",
+    "db:fix-schema": "node scripts/fix-schema.js"
+  },
+  "dependencies": {
+    "better-auth": "^1.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "kysely": "^0.28.11",
+    "pg": "^8.18.0"
+  },
+  "devDependencies": {
+    "@better-auth/cli": "^1.2.0",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

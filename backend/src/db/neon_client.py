@@ -331,18 +331,18 @@ class NeonClient:
             }
 
     # ========================================================================
-    # Personalized Content Cache
+    # Personalized Content Cache (Legacy - Kept for backward compatibility)
     # ========================================================================
 
-    async def get_personalized_content(
+    async def get_personalized_content_legacy(
         self, user_id: str, chapter_slug: str
     ) -> Optional[Dict[str, Any]]:
-        """Get cached personalized content for a user and chapter."""
+        """Get cached personalized content for a user and chapter (legacy method)."""
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow(
                 """
                 SELECT id, user_id, chapter_slug, personalized_markdown,
-                       user_profile_snapshot, content_version, created_at
+                       user_profile_snapshot, content_version, prompt_version, created_at
                 FROM personalized_content
                 WHERE user_id = $1 AND chapter_slug = $2
                 """,
@@ -351,7 +351,7 @@ class NeonClient:
             )
             return dict(row) if row else None
 
-    async def upsert_personalized_content(
+    async def upsert_personalized_content_legacy(
         self,
         user_id: str,
         chapter_slug: str,
@@ -359,18 +359,19 @@ class NeonClient:
         user_profile_snapshot: dict,
         content_version: str,
     ) -> int:
-        """Insert or update personalized content cache."""
+        """Insert or update personalized content cache (legacy method)."""
         import json
         async with self.pool.acquire() as conn:
             row_id = await conn.fetchval(
                 """
                 INSERT INTO personalized_content
-                    (user_id, chapter_slug, personalized_markdown, user_profile_snapshot, content_version, created_at)
-                VALUES ($1, $2, $3, $4::jsonb, $5, NOW())
+                    (user_id, chapter_slug, personalized_markdown, user_profile_snapshot, content_version, prompt_version, created_at)
+                VALUES ($1, $2, $3, $4::jsonb, $5, '', NOW())
                 ON CONFLICT (user_id, chapter_slug) DO UPDATE SET
                     personalized_markdown = $3,
                     user_profile_snapshot = $4::jsonb,
                     content_version = $5,
+                    prompt_version = '',
                     created_at = NOW()
                 RETURNING id
                 """,
@@ -383,17 +384,17 @@ class NeonClient:
             return row_id
 
     # ========================================================================
-    # Urdu Translation Cache
+    # Urdu Translation Cache (Legacy - Kept for backward compatibility)
     # ========================================================================
 
-    async def get_urdu_translation(
+    async def get_urdu_translation_legacy(
         self, chapter_slug: str
     ) -> Optional[Dict[str, Any]]:
-        """Get cached Urdu translation for a chapter."""
+        """Get cached Urdu translation for a chapter (legacy method)."""
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow(
                 """
-                SELECT id, chapter_slug, urdu_markdown, content_version, created_at
+                SELECT id, chapter_slug, urdu_markdown, content_version, prompt_version, created_at
                 FROM urdu_translations
                 WHERE chapter_slug = $1
                 """,
@@ -401,22 +402,23 @@ class NeonClient:
             )
             return dict(row) if row else None
 
-    async def upsert_urdu_translation(
+    async def upsert_urdu_translation_legacy(
         self,
         chapter_slug: str,
         urdu_markdown: str,
         content_version: str,
     ) -> int:
-        """Insert or update Urdu translation cache."""
+        """Insert or update Urdu translation cache (legacy method)."""
         async with self.pool.acquire() as conn:
             row_id = await conn.fetchval(
                 """
                 INSERT INTO urdu_translations
-                    (chapter_slug, urdu_markdown, content_version, created_at)
-                VALUES ($1, $2, $3, NOW())
+                    (chapter_slug, urdu_markdown, content_version, prompt_version, created_at)
+                VALUES ($1, $2, $3, '', NOW())
                 ON CONFLICT (chapter_slug) DO UPDATE SET
                     urdu_markdown = $2,
                     content_version = $3,
+                    prompt_version = '',
                     created_at = NOW()
                 RETURNING id
                 """,
@@ -545,28 +547,46 @@ class NeonClient:
             return deleted_count
 
     # ========================================================================
-    # Update Cache Methods with Prompt Version
+    # Personalized Content Cache (Current Version with Prompt Version)
     # ========================================================================
 
     async def get_personalized_content(
         self, user_id: str, chapter_slug: str,
-        content_version: str, prompt_version: str
+        content_version: str = None, prompt_version: str = None
     ) -> Optional[Dict[str, Any]]:
-        """Get cached personalized content for a user and chapter with dual version validation."""
+        """Get cached personalized content for a user and chapter.
+
+        If content_version and prompt_version are provided, validate against both.
+        Otherwise, just get the latest cached content.
+        """
         async with self.pool.acquire() as conn:
-            row = await conn.fetchrow(
-                """
-                SELECT id, user_id, chapter_slug, personalized_markdown,
-                       user_profile_snapshot, content_version, prompt_version, created_at
-                FROM personalized_content
-                WHERE user_id = $1 AND chapter_slug = $2
-                  AND content_version = $3 AND prompt_version = $4
-                """,
-                user_id,
-                chapter_slug,
-                content_version,
-                prompt_version,
-            )
+            if content_version is not None and prompt_version is not None:
+                # Validate against both content and prompt versions
+                row = await conn.fetchrow(
+                    """
+                    SELECT id, user_id, chapter_slug, personalized_markdown,
+                           user_profile_snapshot, content_version, prompt_version, created_at
+                    FROM personalized_content
+                    WHERE user_id = $1 AND chapter_slug = $2
+                      AND content_version = $3 AND prompt_version = $4
+                    """,
+                    user_id,
+                    chapter_slug,
+                    content_version,
+                    prompt_version,
+                )
+            else:
+                # Get latest cached content
+                row = await conn.fetchrow(
+                    """
+                    SELECT id, user_id, chapter_slug, personalized_markdown,
+                           user_profile_snapshot, content_version, prompt_version, created_at
+                    FROM personalized_content
+                    WHERE user_id = $1 AND chapter_slug = $2
+                    """,
+                    user_id,
+                    chapter_slug,
+                )
             return dict(row) if row else None
 
     async def upsert_personalized_content(
@@ -576,7 +596,7 @@ class NeonClient:
         personalized_markdown: str,
         user_profile_snapshot: dict,
         content_version: str,
-        prompt_version: str
+        prompt_version: str = ""
     ) -> int:
         """Insert or update personalized content cache with prompt version."""
         import json
@@ -603,23 +623,43 @@ class NeonClient:
             )
             return row_id
 
+    # ========================================================================
+    # Urdu Translation Cache (Current Version with Prompt Version)
+    # ========================================================================
+
     async def get_urdu_translation(
         self, chapter_slug: str,
-        content_version: str, prompt_version: str
+        content_version: str = None, prompt_version: str = None
     ) -> Optional[Dict[str, Any]]:
-        """Get cached Urdu translation for a chapter with dual version validation."""
+        """Get cached Urdu translation for a chapter.
+
+        If content_version and prompt_version are provided, validate against both.
+        Otherwise, just get the latest cached translation.
+        """
         async with self.pool.acquire() as conn:
-            row = await conn.fetchrow(
-                """
-                SELECT id, chapter_slug, urdu_markdown, content_version, prompt_version, created_at
-                FROM urdu_translations
-                WHERE chapter_slug = $1
-                  AND content_version = $2 AND prompt_version = $3
-                """,
-                chapter_slug,
-                content_version,
-                prompt_version,
-            )
+            if content_version is not None and prompt_version is not None:
+                # Validate against both content and prompt versions
+                row = await conn.fetchrow(
+                    """
+                    SELECT id, chapter_slug, urdu_markdown, content_version, prompt_version, created_at
+                    FROM urdu_translations
+                    WHERE chapter_slug = $1
+                      AND content_version = $2 AND prompt_version = $3
+                    """,
+                    chapter_slug,
+                    content_version,
+                    prompt_version,
+                )
+            else:
+                # Get latest cached translation
+                row = await conn.fetchrow(
+                    """
+                    SELECT id, chapter_slug, urdu_markdown, content_version, prompt_version, created_at
+                    FROM urdu_translations
+                    WHERE chapter_slug = $1
+                    """,
+                    chapter_slug,
+                )
             return dict(row) if row else None
 
     async def upsert_urdu_translation(
@@ -627,7 +667,7 @@ class NeonClient:
         chapter_slug: str,
         urdu_markdown: str,
         content_version: str,
-        prompt_version: str
+        prompt_version: str = ""
     ) -> int:
         """Insert or update Urdu translation cache with prompt version."""
         async with self.pool.acquire() as conn:

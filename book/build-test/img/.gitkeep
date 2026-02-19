@@ -1,0 +1,9 @@
+# This directory contains curriculum images, diagrams, and screenshots
+#
+# Organization:
+# - module1/ - Module 1 images (ROS 2)
+# - module2/ - Module 2 images (Simulation)
+# - module3/ - Module 3 images (Perception)
+# - module4/ - Module 4 images (Voice-to-Action)
+# - logos/ - Brand logos and icons
+# - diagrams/ - Architecture diagrams

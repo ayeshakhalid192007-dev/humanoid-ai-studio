@@ -1,0 +1,95 @@
+.logo {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.head {
+  fill: none;
+  stroke: var(--ifm-color-primary);
+  transition: stroke 0.2s ease;
+}
+
+.antenna {
+  stroke: var(--ifm-color-primary);
+  transition: stroke 0.2s ease;
+}
+
+.signalDot {
+  fill: var(--ifm-color-primary);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.eye {
+  fill: var(--ifm-color-primary);
+  transition: fill 0.2s ease;
+}
+
+.mouth {
+  fill: none;
+  stroke: var(--ifm-color-primary);
+  stroke-width: 1.5;
+  transition: stroke 0.2s ease;
+}
+
+.neural {
+  stroke: var(--ifm-color-primary-light);
+  opacity: 0.6;
+  transition: stroke 0.2s ease, opacity 0.2s ease;
+}
+
+.node {
+  fill: var(--ifm-color-primary-light);
+  opacity: 0.6;
+  transition: fill 0.2s ease, opacity 0.2s ease;
+}
+
+/* Hover effect for navbar */
+.logo:hover .neural,
+.logo:hover .node {
+  opacity: 1;
+}
+
+.logo:hover .signalDot {
+  animation: none;
+  fill: var(--ifm-color-primary-lightest);
+}
+
+/* Pulse animation for signal dot */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform-origin: center;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] .head {
+  stroke: var(--ifm-color-primary);
+}
+
+[data-theme='dark'] .antenna {
+  stroke: var(--ifm-color-primary);
+}
+
+[data-theme='dark'] .signalDot {
+  fill: var(--ifm-color-primary);
+}
+
+[data-theme='dark'] .eye {
+  fill: var(--ifm-color-primary);
+}
+
+[data-theme='dark'] .mouth {
+  stroke: var(--ifm-color-primary);
+}
+
+[data-theme='dark'] .neural {
+  stroke: var(--ifm-color-primary-light);
+}
+
+[data-theme='dark'] .node {
+  fill: var(--ifm-color-primary-light);
+}

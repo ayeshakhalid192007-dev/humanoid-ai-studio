@@ -1,0 +1,338 @@
+<!--
+Sync Impact Report:
+Version: 1.1.0 → 1.2.0
+Rationale: Added comprehensive governance framework including principle hierarchy, enforcement mechanisms, cross-module outcomes, testing standards, and emergency procedures
+
+Modified Principles:
+- Enhanced Principle I rationale with supporting evidence (Bloom's Taxonomy, retrieval practice research, industry feedback)
+
+Added Sections:
+- Principle Hierarchy (Conflict Resolution): 6-level precedence for resolving conflicts
+- Enforcement and Accountability: Review authority, violation response, appeals process
+- Cross-Module Learning Outcomes: LO-101 to LO-303 spanning all 4 modules
+- Stakeholder Participation: Student feedback, industry advisory, instructor input mechanisms
+- Pattern Versioning and Deprecation: Version tagging, breaking change protocol, backward compatibility
+- Standard Testing Environment: Ubuntu 22.04, ROS 2 Humble, Gazebo 11, Isaac 2023.1.1, testing protocol
+- Observable Outcome Standards: Quantitative metrics, visual confirmation, log validation, failure mode documentation
+- Emergency Amendment Authority: Fast-track process for critical issues (security, safety, legal)
+
+Removed Sections:
+- None
+
+Templates Status:
+✅ plan-template.md - No changes required (governance changes don't affect template structure)
+✅ spec-template.md - No changes required (governance changes don't affect template structure)
+✅ tasks-template.md - No changes required (governance changes don't affect template structure)
+
+Follow-up TODOs:
+- Designate initial curriculum maintainers (minimum 2)
+- Set up issue tracker for instructor/student feedback
+- Create Docker base image matching Standard Testing Environment
+- Establish quarterly survey schedule for student feedback loop
+-->
+
+# AI-Native Physical AI & Humanoid Robotics Constitution
+
+## Curriculum Overview
+
+This constitution governs the development of a comprehensive 4-module educational program that bridges AI, robotics, and physical embodiment. Each module builds on the previous, culminating in an autonomous humanoid robot system.
+
+### Module 1: The Robotic Nervous System (ROS 2)
+**Focus:** Middleware for robot control
+
+- ROS 2 Nodes, Topics, and Services
+- Bridging Python Agents to ROS controllers using `rclpy`
+- Understanding URDF (Unified Robot Description Format) for humanoids
+
+**Deliverables:** Students can write Python nodes that control robot joints, predict message flows through ROS 2 graphs, and debug node communication using CLI tools.
+
+### Module 2: The Digital Twin (Gazebo & Unity)
+**Focus:** Physics simulation and environment building
+
+- Simulating physics, gravity, and collisions in Gazebo
+- High-fidelity rendering and human-robot interaction in Unity
+- Simulating sensors: LiDAR, Depth Cameras, and IMUs
+
+**Deliverables:** Students can spawn URDF robots in Gazebo, configure sensor plugins, and create realistic environments for testing control algorithms.
+
+### Module 3: The AI-Robot Brain (NVIDIA Isaac™)
+**Focus:** Advanced perception and training
+
+- NVIDIA Isaac Sim: Photorealistic simulation and synthetic data generation
+- Isaac ROS: Hardware-accelerated VSLAM (Visual SLAM) and navigation
+- Nav2: Path planning for bipedal humanoid movement
+
+**Deliverables:** Students can train perception models with synthetic data, deploy VSLAM for autonomous navigation, and implement path planning for humanoid locomotion.
+
+### Module 4: Vision-Language-Action (VLA)
+**Focus:** Convergence of LLMs and Robotics
+
+- Voice-to-Action: Using OpenAI Whisper for voice commands
+- Cognitive Planning: Translating natural language instructions into ROS 2 action sequences
+- Capstone Project: Autonomous Humanoid – simulated robot executes voice commands, plans paths, navigates obstacles, identifies objects, and manipulates them
+
+**Deliverables:** Students deploy an end-to-end system where natural language commands drive robot perception, planning, and manipulation in simulated environments.
+
+---
+
+## Core Principles
+
+### I. Reasoning-First Learning (NON-NEGOTIABLE)
+Students MUST predict outcomes before execution. Every lesson requires:
+- **Cause-Effect-Action** chains explicitly modeled
+- Prediction exercises before running code
+- Explanation of "why" before "how"
+- Interactive challenges that test understanding, not rote memorization
+
+**Rationale**: Passive tutorials fail to build intuition. Robot control requires understanding system dynamics, not copy-paste coding. Prediction forces active reasoning about ROS 2 node interactions, topic flows, and URDF kinematics.
+
+**Supporting Evidence**:
+- **Bloom's Taxonomy**: Prediction exercises engage "Analysis" (breaking down message flows) and "Evaluation" (judging correctness) levels vs. "Remembering" (copy-paste tutorials)
+- **Retrieval Practice Research**: Active prediction improves long-term retention by 30-50% compared to passive reading (Roediger & Butler, 2011)
+- **Industry Feedback**: 80% of robotics employers cite "debugging ability" and "systems thinking" as top skill gaps in new graduates (survey: IEEE Robotics & Automation Society, 2024)
+
+### II. System-Oriented Architecture
+Content MUST present ROS 2 as an integrated nervous system:
+- Nodes as neural pathways (message producers/consumers)
+- Topics as sensory/motor signals
+- Services as deliberate control actions
+- URDF as the structural blueprint connecting physical and logical layers
+
+**Rationale**: Isolated component explanations miss the holistic nature of robot middleware. Students must see how nodes coordinate, how topics enable distributed sensing/actuation, and how URDF defines the kinematic tree that grounds all motion commands.
+
+### III. Python-ROS 2 Bridge Patterns
+All Python-ROS 2 interactions MUST be:
+- Clearly specified with message schemas
+- Demonstrated through simulation first (virtual robot)
+- Validated with observable outcomes (robot response)
+- Documented as reusable agent patterns
+
+**Rationale**: Python is the lingua franca for AI agents. Students need bridge patterns that connect AI decision-making (Python) to physical control (ROS 2 C++ core), ensuring they can deploy LLM-based or RL-based controllers to real robots.
+
+### IV. Interactive Verification
+Every concept MUST include:
+- Executable code snippets (students run them)
+- Observable outcomes (terminal output, robot motion, RViz visualization)
+- Prediction checkpoints ("What will happen when...")
+- Error scenarios and debugging guidance
+
+**Rationale**: Static text cannot teach dynamic systems. Students learn by iterating: predict → run → observe → correct mental model. This principle ensures all content is testable and self-correcting.
+
+### V. Modularity and Scalability
+Each module MUST be:
+- Self-contained (Module N has no forward dependencies on Module N+1)
+- Forward-compatible (patterns transfer across modules: ROS 2 → Gazebo/Unity → Isaac → VLA)
+- Progressive complexity within module (foundational concepts → advanced applications)
+- Clearly scoped (Module 1: ROS 2 basics, Module 2: Simulation, Module 3: Isaac perception/navigation, Module 4: Language-action integration)
+
+**Rationale**: Students should master each layer before progressing. Module 1 establishes ROS 2 foundations (nodes, topics, URDF) that carry through all modules. Module 2 adds physics simulation. Module 3 introduces hardware-accelerated perception. Module 4 integrates LLMs for cognitive planning. Agent patterns established early MUST transfer cleanly to later contexts.
+
+### VI. Specification-Driven Development (SDD-RI)
+All ROS 2 nodes, topics, and services MUST:
+- Be specified before implementation (message types, QoS profiles, rate limits)
+- Include reasoning requirements (e.g., "AI agent must infer joint limits from URDF")
+- Capture reusable intelligence (e.g., "joint controller pattern", "sensor fusion pattern")
+- Support agent-based simulation (predict robot response before physical deployment)
+
+**Rationale**: Ad-hoc robotics code leads to brittle systems. SDD-RI ensures every ROS 2 component has clear contracts, reasoning checkpoints, and documented intelligence that can be reused across modules and projects.
+
+### Principle Hierarchy (Conflict Resolution)
+When principles conflict, apply this precedence:
+1. **Reasoning-First Learning (I)** - NON-NEGOTIABLE, overrides all others
+2. **Interactive Verification (IV)** - Core to pedagogy, second priority
+3. **System-Oriented Architecture (II)** - Conceptual foundation
+4. **Modularity and Scalability (V)** - Structural requirement
+5. **Python-ROS 2 Bridge Patterns (III)** - Implementation detail
+6. **SDD-RI (VI)** - Documentation standard
+
+**Exception process**: If a conflict cannot be resolved through hierarchy, escalate to constitution amendment with documented rationale. Example: If interactive verification (IV) would require forward dependencies that break modularity (V), Principle IV wins—find alternative that preserves both.
+
+## Learning Design Requirements
+
+### Content Structure
+- **No Generic Patterns**: Avoid isolated definitions, rote tutorials, or one-size-fits-all examples
+- **Context-Driven Examples**: Every code snippet must reference a specific robot task (e.g., "gripper open/close", "head pan/tilt")
+- **Progressive Disclosure**: Start with minimal viable node (publish to topic) → add services → introduce parameters → action servers
+- **Error Pedagogy**: Include common mistakes and their diagnostic signatures (e.g., "no connection to topic" → check QoS compatibility)
+
+### Student Outcomes (Must Measure)
+
+**Module 1 Outcomes (ROS 2)**:
+- **LO-001**: Students can predict message flow through a 3-node ROS 2 graph before execution
+- **LO-002**: Students can write a Python node that controls a URDF-defined joint
+- **LO-003**: Students can debug node communication failures using ROS 2 CLI tools (`ros2 topic echo`, `ros2 node info`)
+- **LO-004**: Students can reason about URDF joint limits and workspace constraints
+- **LO-005**: Students can explain when to use topics vs services vs action servers
+
+**Module 2 Outcomes (Gazebo/Unity)**:
+- **LO-101**: Students can configure sensor plugins and predict sensor output formats
+- **LO-102**: Students can debug physics simulation failures (collision, gravity, friction)
+- **LO-103**: Students can transfer Module 1 ROS 2 nodes to simulated environments
+
+**Module 3 Outcomes (NVIDIA Isaac)**:
+- **LO-201**: Students can generate synthetic training data and validate against real-world distributions
+- **LO-202**: Students can configure and debug VSLAM pipeline failures
+- **LO-203**: Students can implement Nav2 path planning for bipedal constraints
+
+**Module 4 Outcomes (VLA)**:
+- **LO-301**: Students can decompose natural language commands into ROS 2 action sequences
+- **LO-302**: Students can integrate voice → perception → planning → manipulation pipeline
+- **LO-303**: Students can evaluate end-to-end system performance against voice command accuracy
+
+### Interactive Exercises
+Every lesson MUST include:
+1. **Prediction Phase**: "Before running, what will this node publish?"
+2. **Execution Phase**: Run code, capture output
+3. **Reflection Phase**: "Did output match prediction? Why/why not?"
+4. **Extension Challenge**: Modify code to achieve new behavior
+
+## Intelligence Reuse Guidelines
+
+### Reusable Agent Patterns (Must Document)
+All Python-ROS 2 bridge code MUST capture:
+- **Node Controller Pattern**: How AI agents instantiate and manage ROS 2 nodes
+- **Topic Monitor Pattern**: How agents subscribe to sensor topics and reason about data
+- **Service Caller Pattern**: How agents invoke ROS 2 services with validated requests
+- **URDF Parser Pattern**: How agents extract joint limits, link names, kinematic chains from URDF
+
+### Pattern Storage
+- Location: `/specs/module-<N>-<name>/patterns/` (e.g., `/specs/module-1-ros2/patterns/`, `/specs/module-3-isaac/patterns/`)
+- Format: Markdown with code blocks, reasoning annotations, and extension hooks
+- Naming: `<pattern-name>-agent.md` (e.g., `joint-controller-agent.md`, `vslam-navigation-agent.md`)
+- Cross-references: Patterns should link to dependencies from earlier modules
+
+### Pattern Versioning and Deprecation
+- **Version Tagging**: All patterns include `compatible_with: [ros2-humble, isaac-2023.1]` in frontmatter
+- **Breaking Changes**: When dependencies update (e.g., ROS 2 Humble → Iron):
+  1. Create new pattern version (e.g., `joint-controller-agent-v2.md`)
+  2. Mark old version as deprecated with migration guide
+  3. Maintain both versions for one curriculum cycle (typically 1 year)
+  4. Archive deprecated patterns to `/specs/module-<N>/patterns/deprecated/` after transition period
+- **Backward Compatibility Requirement**: New patterns SHOULD work with previous module patterns unless breaking change documented and justified
+
+### Forward Compatibility Requirements
+Patterns MUST be:
+- **Module-portable**: Work across contexts (bare ROS 2 → Gazebo → Unity → Isaac Sim → VLA pipeline)
+- **Message-generic**: Use ROS 2 standard message interfaces, not simulator-specific APIs
+- **Layered dependencies**: Module N patterns can depend on Module N-1 patterns, never forward
+- **Testable in isolation**: Patterns should have unit tests independent of full robot system
+
+## Development Workflow
+
+### Phase 0: Content Specification
+- Identify lesson learning objectives (LO-XXX format)
+- Map objectives to ROS 2 concepts (nodes, topics, services, URDF)
+- Define prediction-execution-reflection checkpoints
+- Specify required robot behaviors (e.g., "gripper must open within 2 seconds")
+
+### Phase 1: Pattern Development
+- Implement Python-ROS 2 bridge code for lesson
+- Capture reusable patterns in `/specs/module-1-ros2/patterns/`
+- Write prediction questions and expected outcomes
+- Validate against URDF constraints (joint limits, link collisions)
+
+### Phase 2: Interactive Content Creation
+- Write lesson with prediction checkpoints
+- Include executable code snippets with setup instructions
+- Add debugging guidance for common failures
+- Create extension challenges with solution hints
+
+### Phase 3: Validation
+- Test all code snippets in fresh environment (ROS 2 for Module 1, Gazebo for Module 2, etc.)
+- Verify predictions match actual outcomes
+- Ensure error scenarios are reproducible
+- Validate forward compatibility (Module 1 patterns work in Module 2, Module 2 in Module 3, etc.)
+- Cross-module integration tests (e.g., Module 1 URDF loads correctly in Module 2 Gazebo)
+
+### Standard Testing Environment
+All code must be validated against:
+- **OS**: Ubuntu 22.04 LTS (Jammy)
+- **ROS 2**: Humble Hawksbill (LTS release, supported until 2027)
+- **Gazebo**: Gazebo 11 (for Module 2)
+- **Isaac Sim**: NVIDIA Isaac Sim 2023.1.1 (for Module 3)
+- **Python**: 3.10+
+- **Hardware**: Minimum NVIDIA GPU with 6GB VRAM (for Isaac modules), 16GB system RAM
+
+**Testing Protocol**:
+1. Start from fresh Docker container based on `osrf/ros:humble-desktop-full` official image
+2. Install only documented dependencies (listed in lesson/pattern)
+3. Execute all code snippets in lesson order (no skipping)
+4. Verify predictions match outcomes (screenshot/log comparison with expected output)
+5. Document any deviations with reproduction steps
+
+### Observable Outcome Standards
+All predictions must be verifiable within specified tolerances:
+- **Quantitative metrics**: Joint position ±2°, execution time ±0.5s, message rate ±10%
+- **Visual confirmation**: RViz visualization shows expected robot state (e.g., joint angles match URDF limits)
+- **Log validation**: Terminal output matches predicted message structure (field names, types, ranges)
+- **Failure modes**: Explicitly document 2-3 common errors and their diagnostic signatures (e.g., "QoS mismatch: reliable publisher → best-effort subscriber = no connection")
+
+**Insufficient observability examples** (must be rejected in content review):
+- "The robot moves" (too vague—specify joint, direction, speed)
+- "Check if it works" (no specific success criterion)
+- "Output appears in terminal" (no content specification—what fields? what values?)
+- "Node runs successfully" (define success: publishes at 10Hz? responds to service calls?)
+
+## Governance
+
+### Constitution Authority
+This constitution supersedes all other project practices. All lesson content, code examples, and agent patterns MUST comply with:
+- Reasoning-first pedagogy (Principle I)
+- System-oriented explanations (Principle II)
+- Bridge pattern documentation (Principle III)
+- Interactive verification (Principle IV)
+- Modularity requirements (Principle V)
+- SDD-RI specifications (Principle VI)
+
+### Amendment Process
+1. Propose changes via pull request with rationale
+2. Validate against existing lesson content and patterns
+3. Update dependent templates (plan, spec, tasks)
+4. Increment version (MAJOR for breaking changes, MINOR for additions, PATCH for clarifications)
+5. Document migration plan if existing content affected
+
+### Compliance Review
+All content contributions MUST pass:
+- **Interactive Check**: Does lesson include prediction-execution-reflection cycle?
+- **Pattern Check**: Are reusable agent patterns documented?
+- **System Check**: Are ROS 2 components explained as integrated system?
+- **Forward Compatibility Check**: Do patterns work in later module contexts?
+- **Observable Outcome Check**: Are predictions verifiable with specific metrics (see Observable Outcome Standards)?
+- **Testing Environment Check**: Code validated in Standard Testing Environment?
+
+### Enforcement and Accountability
+- **Review Authority**: Designated curriculum maintainers (minimum 2) with veto power over content contributions
+- **Violation Response**:
+  - **Minor violations** (formatting, unclear wording, missing cross-references): Request revision with 7-day fix window
+  - **Major violations** (missing prediction checkpoints, untested code, broken modularity): Content flagged as non-compliant, blocked from release until fixed
+  - **Repeat violations**: Contributor escalated to project governance for remediation or removal
+- **Appeals Process**: Contributors can challenge compliance decisions by:
+  1. Documenting specific principle conflict or ambiguity
+  2. Proposing alternative interpretation or constitution amendment
+  3. Obtaining consensus from 75% of maintainers (2 out of 2, or 3 out of 4 if team expands)
+
+### Stakeholder Participation
+- **Student Feedback Loop**: Quarterly surveys assessing principle effectiveness (e.g., "Did prediction exercises improve understanding?")
+- **Industry Advisory**: Annual review by robotics practitioners for real-world alignment (companies: Boston Dynamics, NVIDIA, Tesla, etc.)
+- **Instructor Input**: Teaching staff can flag pedagogical issues via GitHub issue tracker with `pedagogy` label
+- **Amendment Proposals**: Any stakeholder can propose changes via GitHub issue, but maintainers approve per Amendment Process
+
+### Emergency Amendment Authority
+For critical issues (security vulnerabilities, safety hazards, legal compliance):
+- **Fast-track Process**: Single maintainer can make immediate changes without full review
+- **Documentation Requirement**: Within 48 hours, document:
+  - Nature of emergency (CVE number, safety incident report, legal citation)
+  - Changes made (diff + rationale)
+  - Rationale for bypassing normal amendment process
+- **Retroactive Review**: Within 14 days, full maintainer team votes to:
+  - **Ratify**: Emergency change becomes permanent (no further action)
+  - **Revise**: Modify emergency change and re-approve with adjustments
+  - **Revert**: Restore previous state and implement alternative solution through normal process
+
+### Complexity Justification
+If any lesson violates simplicity (e.g., requires advanced ROS 2 features like lifecycle nodes, component composition):
+- Document why simpler approach insufficient
+- Provide fallback for students using only basic ROS 2
+- Capture complexity as optional extension, not core requirement
+
+**Version**: 1.2.0 | **Ratified**: 2026-02-07 | **Last Amended**: 2026-02-07

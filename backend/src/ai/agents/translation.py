@@ -6,7 +6,7 @@ from openai import AsyncOpenAI
 
 from ..base import BaseAgent, AgentRequest, AgentResponse
 from ...services.chapter_retriever import ChapterRetriever
-from ..registry import PromptRegistry
+from ..prompts.registry import PromptRegistry
 from ...db.neon_client import NeonClient, get_neon_client
 from ...config import get_settings
 
@@ -73,14 +73,14 @@ class TranslationAgent(BaseAgent):
 
         # If content isn't provided, fetch from chapter
         content_to_process = request.content
+        content_version = request.content_version or ""
 
         if not content_to_process and request.chapter_slug:
             chapter_data = await self.chapter_retriever.get_chapter_content(request.chapter_slug)
             if not chapter_data:
                 raise ValueError(f"Chapter not found: {request.chapter_slug}")
             content_to_process = chapter_data["markdown"]
-        elif hasattr(request, 'content_version'):
-            content_version = request.content_version
+            content_version = chapter_data.get("version", "")
 
         target_language = request.target_language or "urdu"
 
@@ -105,7 +105,7 @@ class TranslationAgent(BaseAgent):
         # Make the API call
         try:
             response = await self.client.chat.completions.create(
-                model=self.settings.OPENAI_MODEL if self.settings.OPENAI_MODEL else "gpt-4o-mini",
+                model=self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else "gpt-4o-mini",
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,

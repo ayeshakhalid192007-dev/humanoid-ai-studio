@@ -4,7 +4,7 @@ from typing import Dict, Any
 from ..base import BaseSkill, SkillContext
 
 
-class EducationalToneControlSkill(BaseSkill):
+class EducationalToneSkill(BaseSkill):
     """Skill to control educational tone appropriate for target audience."""
 
     def get_name(self) -> str:

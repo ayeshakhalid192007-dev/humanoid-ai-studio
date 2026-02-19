@@ -1,0 +1,199 @@
+openapi: 3.0.3
+info:
+  title: RAG Chatbot API - Health Check Endpoint
+  description: |
+    API specification for the GET /health endpoint of the RAG chatbot backend.
+
+    This endpoint checks the health status of all critical dependencies:
+    - **Qdrant Cloud**: Vector database for curriculum embeddings
+    - **Neon Postgres**: Relational database for conversation history and rate limiting
+    - **OpenAI API**: LLM service for embeddings and answer generation
+
+    Used for:
+    - Monitoring and alerting (uptime checks)
+    - Graceful degradation (chatbot shows "offline" if unhealthy)
+    - Debugging deployment issues
+
+    **Requirements**: FR-034 (FastAPI), FR-035 (Qdrant), FR-037 (Neon), FR-058 (Error messaging)
+  version: 1.0.0
+  contact:
+    name: Physical AI Platform Team
+    url: https://github.com/yourusername/physical-ai-platform
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://your-backend.railway.app
+    description: Production backend (Railway deployment)
+  - url: http://localhost:8000
+    description: Local development server
+
+tags:
+  - name: health
+    description: Service health monitoring
+
+paths:
+  /health:
+    get:
+      summary: Check backend health status
+      description: |
+        Performs health checks on all critical dependencies and returns aggregated status.
+
+        **Health Check Logic**:
+        1. **Qdrant**: Attempt to list collections (expect "curriculum" collection exists)
+        2. **Neon**: Execute simple query (e.g., SELECT 1) to verify database connectivity
+        3. **OpenAI**: Ping API with minimal request (or skip if recently used successfully)
+
+        **Response**:
+        - **200 OK**: All services healthy
+        - **503 Service Unavailable**: One or more services unhealthy
+
+        **Timeout**: Each health check has 2-second timeout to avoid blocking
+      operationId: checkHealth
+      tags:
+        - health
+      responses:
+        '200':
+          description: All services healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                all_services_healthy:
+                  summary: All services operational
+                  value:
+                    status: "healthy"
+                    services:
+                      qdrant: "up"
+                      neon: "up"
+                      openai: "up"
+                    timestamp: "2026-02-09T14:30:45Z"
+                    version: "1.0.0"
+        '503':
+          description: One or more services unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                neon_suspended:
+                  summary: Neon Postgres auto-suspended (compute exhausted)
+                  value:
+                    status: "unhealthy"
+                    services:
+                      qdrant: "up"
+                      neon: "down"
+                      openai: "up"
+                    timestamp: "2026-02-09T14:30:45Z"
+                    version: "1.0.0"
+                    details:
+                      neon: "Database connection failed: compute hours exhausted (auto-suspend)"
+                qdrant_outage:
+                  summary: Qdrant Cloud experiencing outage
+                  value:
+                    status: "unhealthy"
+                    services:
+                      qdrant: "down"
+                      neon: "up"
+                      openai: "up"
+                    timestamp: "2026-02-09T14:30:45Z"
+                    version: "1.0.0"
+                    details:
+                      qdrant: "Vector database unreachable: HTTP 503 Service Unavailable"
+                openai_rate_limit:
+                  summary: OpenAI API rate limit exceeded
+                  value:
+                    status: "degraded"
+                    services:
+                      qdrant: "up"
+                      neon: "up"
+                      openai: "degraded"
+                    timestamp: "2026-02-09T14:30:45Z"
+                    version: "1.0.0"
+                    details:
+                      openai: "Rate limit exceeded (429), queries may be delayed"
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - services
+        - timestamp
+      properties:
+        status:
+          type: string
+          enum:
+            - healthy
+            - degraded
+            - unhealthy
+          description: |
+            Overall health status:
+            - **healthy**: All services operational
+            - **degraded**: Services operational but with reduced performance (e.g., rate limits)
+            - **unhealthy**: One or more critical services unavailable
+          example: "healthy"
+        services:
+          type: object
+          description: |
+            Status of each critical service.
+            Possible values: "up", "down", "degraded"
+          required:
+            - qdrant
+            - neon
+            - openai
+          properties:
+            qdrant:
+              type: string
+              enum: ["up", "down", "degraded"]
+              description: |
+                Qdrant Cloud vector database status.
+                - **up**: Collection accessible, queries working
+                - **down**: Connection failed or collection missing
+                - **degraded**: Slow response times (>500ms)
+              example: "up"
+            neon:
+              type: string
+              enum: ["up", "down", "degraded"]
+              description: |
+                Neon Serverless Postgres status.
+                - **up**: Database queries working (<100ms)
+                - **down**: Connection failed or compute exhausted (auto-suspended)
+                - **degraded**: Database resuming from suspend (transient state)
+              example: "up"
+            openai:
+              type: string
+              enum: ["up", "down", "degraded"]
+              description: |
+                OpenAI API status.
+                - **up**: API responding normally
+                - **down**: API unreachable or authentication failed
+                - **degraded**: Rate limits active, requests may be queued/delayed
+              example: "up"
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when health check was performed
+          example: "2026-02-09T14:30:45Z"
+        version:
+          type: string
+          pattern: '^\d+\.\d+\.\d+$'
+          description: Backend API version (semantic versioning)
+          example: "1.0.0"
+        details:
+          type: object
+          description: |
+            Optional: Detailed error messages for unhealthy services.
+            Only present when status is "degraded" or "unhealthy".
+          additionalProperties:
+            type: string
+          example:
+            neon: "Database connection failed: compute hours exhausted (auto-suspend)"
+          nullable: true
+
+  securitySchemes: {}
+
+security: []

@@ -4,7 +4,7 @@ from typing import Dict, Any
 from ..base import BaseSkill, SkillContext
 
 
-class KnowledgeLevelAdjustmentSkill(BaseSkill):
+class KnowledgeLevelSkill(BaseSkill):
     """Skill to adapt content complexity based on user's declared proficiency level."""
 
     def get_name(self) -> str:

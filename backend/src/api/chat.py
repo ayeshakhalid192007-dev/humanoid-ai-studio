@@ -29,6 +29,8 @@ from ..models.query import ChatRequest, ChatResponse, Citation, RetrievedChunk
 from .auth import get_optional_user, get_user_id_from_session, AuthenticatedUser
 from .sessions import add_turn_to_session
 from ..utils.logger import get_logger
+from ..chatkit.agent import ChatKitAgent
+from ..chatkit.context_injector import ContextInjector, ConversationContext
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -374,74 +376,131 @@ async def ask_from_selection(request: Request, chat_request: ChatRequest) -> Cha
 @router.post("/chat/v2", status_code=status.HTTP_200_OK)
 async def chat_v2(
     request: ChatV2Request,
-    user_id: Optional[str] = Depends(get_user_id_from_session)
+    user_id: Optional[str] = Depends(get_user_id_from_session),
+    use_chatkit: bool = Query(False, description="Whether to use the new ChatKit-based endpoint")
 ):
     """
-    Enhanced chat endpoint using ChatKit agent with tool-based RAG via AI Orchestrator.
+    Enhanced chat endpoint with option to use ChatKit agent.
 
     Features:
-    - Tool-based retrieval decisions
+    - By default: Standard RAG via AI Orchestrator
+    - With use_chatkit=true: Uses ChatKit agent with tool-based RAG
     - Dual mode support (full_book / selected_text)
     - Session continuity
     - User attribution
     """
-    # Create a deprecation header for this endpoint
-    response = JSONResponse(
-        content={},
-        headers={
-            "Deprecation": "true",
-            "Link": '</api/ai/chat>; rel="successor-version"',
-        }
-    )
+    # Create a response object
+    response = JSONResponse(content={})
 
     try:
-        # Get orchestrator
-        orchestrator = await get_orchestrator(request)
+        if use_chatkit:
+            # Use the new ChatKit implementation for enhanced conversation
+            # Extract user profile if available
+            user_profile = None
+            if user_id:
+                # This would typically fetch from DB or auth system
+                user_profile = {"id": user_id, "preferred_language": "en", "expertise_level": "intermediate"}
 
-        # Validate mode/selected_text combination
-        if request.mode == AnsweringMode.SELECTED_TEXT and not request.selected_text:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="selected_text is required when mode is 'selected_text'"
+            # Create conversation context
+            additional_metadata = {"page_context": request.page_context} if request.page_context else {}
+
+            # Create context with available data
+            context_injector = ContextInjector()
+            conv_context = context_injector.create_conversation_context(
+                additional_metadata=additional_metadata
             )
 
-        # Build payload for orchestrator
-        payload = {
-            "request_type": "rag_chat",
-            "query": request.query,
-            "session_id": request.session_id,
-            "mode": request.mode.value,
-            "selected_text": request.selected_text if request.mode == AnsweringMode.SELECTED_TEXT else None,
-            "user_id": user_id
-        }
+            # If we have page context, build it
+            if request.page_context:
+                page_data = {
+                    "title": "Default Title",
+                    "url": request.page_context,
+                    "module": "Module X",
+                    "section": "Section X",
+                    "contentPreview": "Content preview here..."
+                }
+                conv_context.page_context = context_injector.extract_page_context(page_data)
 
-        # Execute through orchestrator
-        result = await orchestrator.execute("rag_chat", payload)
+            # Create ChatKit agent
+            agent = ChatKitAgent(
+                session_id=request.session_id,
+                user_id=user_id
+            )
 
-        # Transform orchestrator response to legacy shape
-        agent_data = result.data
+            # Inject context into agent
+            await context_injector.inject_context_to_agent(agent, conv_context)
 
-        # Log conversation turn
-        await add_turn_to_session(
-            session_id=agent_data.get("session_id", request.session_id or "unknown"),
-            query=request.query,
-            response=agent_data.get("content", ""),
-            citations=agent_data.get("citations", [])
-        )
+            # Process the message
+            result = await agent.process_message(
+                user_message=request.query,
+                selected_text=request.selected_text
+            )
 
-        logger.info(
-            f"Chat v2 (via orchestrator): session={agent_data.get('session_id', request.session_id)}, "
-            f"mode={agent_data.get('mode', request.mode.value)}, agent_type={agent_data.get('agent_type', 'rag_chat')}"
-        )
+            # Personalize response based on context if needed
+            personalized_answer = await context_injector.personalize_context_response(
+                conv_context,
+                result["answer"]
+            )
 
-        response.content = ChatV2Response(
-            answer=agent_data.get("content", ""),
-            citations=agent_data.get("citations", []),
-            mode=agent_data.get("mode", request.mode.value),
-            tool_calls=agent_data.get("tool_calls", []),
-            session_id=agent_data.get("session_id", request.session_id or ""),
-            retrieved_chunks=agent_data.get("retrieved_chunks", [])
-        ).dict()
+            response.content = ChatV2Response(
+                answer=personalized_answer,
+                citations=result["citations"],
+                mode=result["mode"],
+                tool_calls=result["tool_calls"],
+                session_id=result["session_id"],
+                retrieved_chunks=[]  # This would come from the agent if needed
+            ).dict()
+
+        else:
+            # Use the standard orchestrator approach (original behavior)
+            # Get orchestrator
+            orchestrator = await get_orchestrator(request)
+
+            # Validate mode/selected_text combination
+            if request.mode == AnsweringMode.SELECTED_TEXT and not request.selected_text:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="selected_text is required when mode is 'selected_text'"
+                )
+
+            # Build payload for orchestrator
+            payload = {
+                "request_type": "rag_chat",
+                "query": request.query,
+                "session_id": request.session_id,
+                "mode": request.mode.value,
+                "selected_text": request.selected_text if request.mode == AnsweringMode.SELECTED_TEXT else None,
+                "user_id": user_id
+            }
+
+            # Execute through orchestrator
+            result = await orchestrator.execute("rag_chat", payload)
+
+            # Transform orchestrator response to legacy shape
+            agent_data = result.data
+
+            # Log conversation turn
+            await add_turn_to_session(
+                session_id=agent_data.get("session_id", request.session_id or "unknown"),
+                query=request.query,
+                response=agent_data.get("content", ""),
+                citations=agent_data.get("citations", [])
+            )
+
+            logger.info(
+                f"Chat v2 (via orchestrator): session={agent_data.get('session_id', request.session_id)}, "
+                f"mode={agent_data.get('mode', request.mode.value)}, agent_type={agent_data.get('agent_type', 'rag_chat')}"
+            )
+
+            response.content = ChatV2Response(
+                answer=agent_data.get("content", ""),
+                citations=agent_data.get("citations", []),
+                mode=agent_data.get("mode", request.mode.value),
+                tool_calls=agent_data.get("tool_calls", []),
+                session_id=agent_data.get("session_id", request.session_id or ""),
+                retrieved_chunks=agent_data.get("retrieved_chunks", [])
+            ).dict()
+
         return response
 
     except HTTPException:

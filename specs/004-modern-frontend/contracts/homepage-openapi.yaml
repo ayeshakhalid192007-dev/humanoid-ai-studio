@@ -1,0 +1,488 @@
+openapi: 3.0.1
+info:
+  title: Modern Frontend Homepage API
+  description: API contracts for the "Master Physical AI & Humanoid Robotics" modern homepage
+  version: 1.0.0
+
+paths:
+  /api/homepage/config:
+    get:
+      summary: Get homepage configuration
+      description: Retrieve configuration settings for the homepage including theming, features, and feature flags
+      responses:
+        '200':
+          description: Homepage configuration successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomepageConfig'
+              example:
+                title: "Master Physical AI & Humanoid Robotics"
+                tagline: "Learn ROS 2, simulation, perception, and voice-to-action pipelines"
+                theme:
+                  primaryColor: "#0f0f14"
+                  gradient: ["#3b82f6", "#8b5cf6", "#6366f1"]
+                  fontFamily: "Inter"
+                  isDarkMode: true
+                featuresEnabled:
+                  heroAnimation: true
+                  glassmorphism: true
+                  gradientBackgrounds: true
+                ctaButtons:
+                  - label: "Get Started"
+                    href: "/docs/intro"
+                    variant: "primary"
+                  - label: "Explore Features"
+                    href: "/features"
+                    variant: "secondary"
+
+  /api/homepage/content:
+    get:
+      summary: Get homepage content
+      description: Retrieve content for all sections of the homepage
+      parameters:
+        - in: query
+          name: locale
+          schema:
+            type: string
+            default: "en"
+          description: Language locale for content
+      responses:
+        '200':
+          description: Homepage content successfully retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomepageContent'
+              example:
+                hero:
+                  title: "Master Physical AI & Humanoid Robotics"
+                  subtitle: "Transform your understanding of AI-powered robotics through cutting-edge curriculum designed for engineers and researchers"
+                  ctaButtons:
+                    - label: "Get Started"
+                      href: "/docs/intro"
+                      variant: "primary"
+                      glowEffect: true
+                    - label: "Explore Features"
+                      href: "/features"
+                      variant: "secondary"
+                      glowEffect: true
+                  backgroundImage:
+                    type: "gradient"
+                    gradientColors: ["#0f0f14", "#1a1a2e", "#16213e"]
+                    animated: true
+                about:
+                  title: "Intelligent AI Learning Platform"
+                  content: "This comprehensive notebook integrates AI tutoring, robotics simulation, structured curriculum, modular AI agents, and real-time personalization to help you master humanoid robotics. Our platform bridges the gap between theoretical knowledge and practical implementation."
+                  containerStyle:
+                    backgroundType: "glass"
+                    backdropBlur: "blur-md"
+                    padding: "p-8"
+                    rounded: "rounded-2xl"
+                    boxShadow: "shadow-xl"
+                learningPillars:
+                  title: "Core Learning Pillars"
+                  pillars:
+                    - id: "ai-tutor"
+                      title: "AI Tutor"
+                      description: "Personalized AI-powered tutoring to guide your learning journey."
+                      icon: "🤖"
+                    - id: "interactive-simulations"
+                      title: "Interactive Simulations"
+                      description: "Run humanoid robot simulations in realistic environments."
+                      icon: "🎮"
+                    - id: "structured-curriculum"
+                      title: "Structured Curriculum"
+                      description: "Carefully designed learning path from ROS 2 basics to advanced topics."
+                      icon: "📚"
+                    - id: "personalized-chapters"
+                      title: "Personalized Chapters"
+                      description: "Content adapted to your learning style and pace."
+                      icon: "🎯"
+                    - id: "urdu-translation"
+                      title: "Urdu Translation"
+                      description: "Learning materials available in Urdu for broader accessibility."
+                      icon: "🇺🇸🇵🇰"
+                    - id: "rag-chatbot"
+                      title: "Intelligent RAG Chatbot"
+                      description: "Access curriculum knowledge with AI-powered chat assistance."
+                      icon: "💬"
+                  gridColumnConfig:
+                    desktop: 3
+                    tablet: 2
+                    mobile: 1
+                features:
+                  title: "Everything You Need to Master Robotics"
+                  features:
+                    - id: "ros2-fundamentals"
+                      title: "ROS 2 Fundamentals"
+                      description: "Learn Robot Operating System 2 fundamentals with Humble Hawksbill distro."
+                    - id: "simulation-environments"
+                      title: "Simulation Environments"
+                      description: "Simulate robots in Gazebo with physics engines and 3D models."
+                    - id: "nvidia-isaac"
+                      title: "NVIDIA Isaac Integration"
+                      description: "Leverage GPU acceleration for complex robotics applications."
+                    - id: "vla-systems"
+                      title: "Vision-Language-Action Systems"
+                      description: "Build end-to-end systems that combine perception, language, and action."
+                    - id: "reinforcement-learning"
+                      title: "Reinforcement Learning"
+                      description: "Train intelligent agents for complex robotics tasks."
+                    - id: "sim-to-real"
+                      title: "Sim-to-Real Transfer"
+                      description: "Deploy learned behaviors from simulation to real robots."
+                    - id: "ai-orchestrator"
+                      title: "AI Orchestrator Architecture"
+                      description: "Coordinate multiple AI systems within a unified framework."
+                    - id: "agent-skills"
+                      title: "Reusable Agent Skills"
+                      description: "Develop modular skills that agents can reuse across tasks."
+                    - id: "modular-design"
+                      title: "Modular AI System Design"
+                      description: "Build extensible systems with clean separation of concerns."
+                    - id: "authentication"
+                      title: "Authentication & Personalization"
+                      description: "Secure access with personalized learning experiences."
+                    - id: "observability"
+                      title: "Observability & Logging"
+                      description: "Monitor and debug complex robotics systems effectively."
+                footer:
+                  projectName: "Physical AI Platform"
+                  tagline: "Advanced robotics education platform"
+                  externalLinks:
+                    - text: "GitHub"
+                      url: "https://github.com/yourusername/physical_ai"
+                      icon: "🐙"
+                    - text: "Community"
+                      url: "https://github.com/yourusername/physical_ai/discussions"
+                      icon: "👥"
+                    - text: "Contact"
+                      url: "mailto:contact@physicalaiai.com"
+                      icon: "📧"
+
+  /api/stats/page-views:
+    post:
+      summary: Track page views
+      description: Record homepage engagement metrics (complies with privacy regulations)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PageViewEvent'
+      responses:
+        '200':
+          description: Page view successfully recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  eventId:
+                    type: string
+                    description: Unique identifier for this event
+
+components:
+  schemas:
+    HomepageConfig:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Main title for the homepage
+        tagline:
+          type: string
+          description: Subtitle/tagline for the homepage
+        theme:
+          $ref: '#/components/schemas/HomepageTheme'
+        featuresEnabled:
+          type: object
+          properties:
+            heroAnimation:
+              type: boolean
+              description: Whether hero animations are enabled
+            glassmorphism:
+              type: boolean
+              description: Whether glassmorphism effects are enabled
+            gradientBackgrounds:
+              type: boolean
+              description: Whether gradient backgrounds are used
+        ctaButtons:
+          type: array
+          items:
+            $ref: '#/components/schemas/CTAButton'
+
+    HomepageTheme:
+      type: object
+      properties:
+        primaryColor:
+          type: string
+          description: Primary color in hex format
+          example: "#0f0f14"
+        gradient:
+          type: array
+          description: Gradient colors for backgrounds
+          items:
+            type: string
+          example: ["#3b82f6", "#8b5cf6", "#6366f1"]
+        fontFamily:
+          type: string
+          description: Font family to use across homepage
+          example: "Inter"
+        isDarkMode:
+          type: boolean
+          description: Whether site uses dark mode as default
+
+    CTAButton:
+      type: object
+      properties:
+        label:
+          type: string
+          description: Button text/label
+          maxLength: 25
+        href:
+          type: string
+          description: Navigation destination
+        variant:
+          type: string
+          enum: ["primary", "secondary", "ghost"]
+          description: Button styling variant
+        glowEffect:
+          type: boolean
+          default: true
+          description: Whether button has glowing effect on hover
+
+    HomepageContent:
+      type: object
+      properties:
+        hero:
+          $ref: '#/components/schemas/HeroSection'
+        about:
+          $ref: '#/components/schemas/AboutSection'
+        learningPillars:
+          $ref: '#/components/schemas/LearningPillarsSection'
+        features:
+          $ref: '#/components/schemas/FeaturesSection'
+        footer:
+          $ref: '#/components/schemas/FooterSection'
+
+    HeroSection:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Hero title text
+          maxLength: 60
+        subtitle:
+          type: string
+          description: Hero subtitle text
+          maxLength: 150
+        ctaButtons:
+          type: array
+          items:
+            $ref: '#/components/schemas/CTAButton'
+          minItems: 1
+          maxItems: 2
+          description: Call-to-action buttons for hero section
+        backgroundImage:
+          $ref: '#/components/schemas/BackgroundStyle'
+
+    BackgroundStyle:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: ["gradient", "image", "glass"]
+          description: Background style type
+        gradientColors:
+          type: array
+          items:
+            type: string
+          description: Array of gradient colors (used when type is gradient)
+        imageSrc:
+          type: string
+          description: Image URL (used when type is image)
+        animated:
+          type: boolean
+          description: Whether the background has animation
+
+    AboutSection:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Section title
+          maxLength: 50
+        content:
+          type: string
+          description: Main content text
+          maxLength: 1000
+        containerStyle:
+          $ref: '#/components/schemas/ContainerStyle'
+
+    ContainerStyle:
+      type: object
+      properties:
+        backgroundType:
+          type: string
+          enum: ["glass", "solid", "transparent"]
+        backdropBlur:
+          type: string
+          example: "blur-md"
+        padding:
+          type: string
+          example: "p-8"
+        rounded:
+          type: string
+          example: "rounded-2xl"
+        boxShadow:
+          type: string
+          example: "shadow-xl"
+
+    LearningPillarsSection:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Section title
+        pillars:
+          type: array
+          items:
+            $ref: '#/components/schemas/LearningPillar'
+          minItems: 6
+          maxItems: 6
+          description: The 6 learning pillars for the platform
+        gridColumnConfig:
+          type: object
+          properties:
+            desktop:
+              type: number
+              minimum: 1
+              maximum: 6
+            tablet:
+              type: number
+              minimum: 1
+              maximum: 4
+            mobile:
+              type: number
+              minimum: 1
+              maximum: 2
+
+    LearningPillar:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the pillar
+        title:
+          type: string
+          description: Pillar title
+          maxLength: 30
+        description:
+          type: string
+          description: Pillar description
+          maxLength: 100
+        icon:
+          type: string
+          description: Emoji icon for the pillar
+
+    FeaturesSection:
+      type: object
+      properties:
+        title:
+          type: string
+          description: Section title
+          maxLength: 60
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeatureItem'
+          minItems: 5
+          description: List of platform features
+        layoutType:
+          type: string
+          enum: ["grid", "list"]
+          description: How features should be laid out
+
+    FeatureItem:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the feature
+        title:
+          type: string
+          description: Feature title
+          maxLength: 40
+        description:
+          type: string
+          description: Feature description
+          maxLength: 150
+        icon:
+          type: string
+          description: Icon for the feature
+
+    FooterSection:
+      type: object
+      properties:
+        projectName:
+          type: string
+          description: Project name to display
+          maxLength: 50
+        tagline:
+          type: string
+          description: Short tagline for footer
+          maxLength: 60
+        externalLinks:
+          type: array
+          items:
+            $ref: '#/components/schemas/FooterLink'
+
+    FooterLink:
+      type: object
+      properties:
+        text:
+          type: string
+          description: Link text
+          maxLength: 30
+        url:
+          type: string
+          description: Target URL (validates URL format)
+        icon:
+          type: string
+          description: Emoji icon for the link
+
+    PageViewEvent:
+      type: object
+      properties:
+        page:
+          type: string
+          description: The page that was viewed
+          example: "homepage"
+        userId:
+          type: string
+          description: Optional user identifier (from auth context)
+        duration:
+          type: number
+          description: Time spent on page in seconds
+        action:
+          type: string
+          description: Action taken (e.g., button click that initiated)
+          example: "cta_button_clicked"
+        metadata:
+          type: object
+          description: Additional context about the view
+          additionalProperties: true
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer token authentication for authorized endpoints
+
+security:
+  - BearerAuth: []

@@ -1,0 +1,161 @@
+/**
+ * ChapterToolbar Styles
+ *
+ * Button layout, loading states, RTL content support,
+ * and error display for personalization/translation toolbar.
+ */
+
+.toolbar {
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+}
+
+.buttonGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.toolbarButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--ifm-color-primary);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  color: var(--ifm-color-primary);
+}
+
+.toolbarButton:hover:not(:disabled) {
+  background: var(--ifm-color-primary);
+  color: white;
+}
+
+.toolbarButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.personalizeButton {
+  border-color: var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+}
+
+.translateButton {
+  border-color: #6b46c1;
+  color: #6b46c1;
+}
+
+.translateButton:hover:not(:disabled) {
+  background: #6b46c1;
+  color: white;
+}
+
+.revertButton {
+  border-color: #718096;
+  color: #718096;
+}
+
+.revertButton:hover:not(:disabled) {
+  background: #718096;
+  color: white;
+}
+
+.regenerateButton {
+  border-color: #dd6b20;
+  color: #dd6b20;
+}
+
+.regenerateButton:hover:not(:disabled) {
+  background: #dd6b20;
+  color: white;
+}
+
+/* Loading spinner */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error bar */
+.errorBar {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #fed7d7;
+  color: #c53030;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+[data-theme="dark"] .errorBar {
+  background: #4a1a1a;
+  color: #feb2b2;
+}
+
+.retryButton {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.retryButton:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* RTL content container */
+.rtlContent {
+  direction: rtl;
+  text-align: right;
+  font-family: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", serif;
+  line-height: 2;
+}
+
+.rtlContent code,
+.rtlContent pre {
+  direction: ltr;
+  text-align: left;
+  font-family: var(--ifm-font-family-monospace);
+}
+
+.rtlContent pre {
+  overflow-x: auto;
+}
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+  .buttonGroup {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbarButton {
+    justify-content: center;
+  }
+}
