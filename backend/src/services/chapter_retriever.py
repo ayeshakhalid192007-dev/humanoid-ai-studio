@@ -21,6 +21,8 @@ except ImportError:
     QDRANT_AVAILABLE = False
 
 from ..config import get_settings
+from ..utils.cache import CurriculumCache, get_cache_manager
+from ..utils.logger import get_logger
 
 
 class ChapterRetriever:
@@ -45,6 +47,11 @@ class ChapterRetriever:
         self.collection_name = "curriculum"
         # Filesystem fallback: project_root/book/docs/
         self._docs_dir = Path(__file__).resolve().parent.parent.parent.parent / "book" / "docs"
+
+        # Initialize cache manager
+        self.cache_manager = None
+        self.cache = CurriculumCache()
+        self.logger = get_logger(__name__)
 
     def _parse_chapter_slug(self, chapter_slug: str) -> Dict[str, str]:
         """
@@ -81,6 +88,14 @@ class ChapterRetriever:
             Dict with 'content' (reconstructed Markdown), 'content_version' (hash),
             and 'chunk_count'. None if chapter not found.
         """
+        # Check cache first
+        cached_content = await self.cache.get_chapter_content(chapter_slug)
+        if cached_content:
+            self.logger.debug(f"Cache hit for chapter: {chapter_slug}")
+            return cached_content
+
+        self.logger.debug(f"Cache miss for chapter: {chapter_slug}, fetching from source")
+
         try:
             parsed = self._parse_chapter_slug(chapter_slug)
         except ValueError:
@@ -114,7 +129,11 @@ class ChapterRetriever:
 
             if not results:
                 # Fallback: read directly from filesystem
-                return await self._read_from_filesystem(chapter_slug)
+                fs_content = await self._read_from_filesystem(chapter_slug)
+                if fs_content:
+                    # Cache filesystem content with shorter TTL
+                    await self.cache.cache_chapter_content(chapter_slug, fs_content, ttl=1800)  # 30 min
+                return fs_content
 
             # Sort by point ID to preserve original chunk ordering
             sorted_chunks = sorted(results, key=lambda r: str(r.id))
@@ -131,17 +150,26 @@ class ChapterRetriever:
             # Compute content version hash
             content_version = hashlib.sha256(full_content.encode()).hexdigest()[:16]
 
-            return {
+            result = {
                 "content": full_content,
                 "content_version": content_version,
                 "chunk_count": len(sorted_chunks),
             }
 
+            # Cache the successfully retrieved content
+            await self.cache.cache_chapter_content(chapter_slug, result, ttl=3600)  # 1 hour
+
+            return result
+
         except Exception as e:
             # If Qdrant fails entirely, try filesystem fallback
             fs_result = await self._read_from_filesystem(chapter_slug)
             if fs_result:
+                # Cache filesystem result
+                await self.cache.cache_chapter_content(chapter_slug, fs_result, ttl=1800)  # 30 min
                 return fs_result
+
+            self.logger.error(f"Chapter retrieval failed for {chapter_slug}: {str(e)}")
             raise RuntimeError(f"Chapter retrieval failed for {chapter_slug}: {str(e)}")
 
     async def _read_from_filesystem(

@@ -22,6 +22,7 @@ from ..config import get_settings
 from ..db.neon_client import get_neon_client
 from ..services.chapter_retriever import ChapterRetriever
 from ..utils.logger import get_logger
+from ..utils.error_handlers import APIError, ServiceError, ErrorCode, handle_api_exception
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -140,11 +141,21 @@ async def translate_chapter(
         }
 
         return response
+    except ServiceError:
+        # Re-raise service errors as they're already properly formatted
+        raise
+    except APIError as e:
+        # Pass through our standard API errors
+        logger.error(f"APIError in translation: {e.message}")
+        raise HTTPException(status_code=e.status_code, detail=e.message)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # Handle validation errors
+        raise HTTPException(status_code=400, detail=f"Validation error: {str(e)}")
     except Exception as e:
-        logger.error(f"Translation failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
+        # Convert unexpected errors to standard errors
+        api_error = handle_api_exception(e)
+        logger.error(f"Translation failed: {api_error.message}", exc_info=True)
+        raise HTTPException(status_code=api_error.status_code, detail=api_error.message)
 
 
 @router.get("/translate/status/{chapter_slug:path}")

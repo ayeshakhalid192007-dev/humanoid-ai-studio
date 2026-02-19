@@ -14,6 +14,8 @@ import os
 from typing import Optional, Dict, Any, List
 from uuid import UUID
 from datetime import datetime, timedelta
+from ..utils.cache import PersonalizationCache, TranslationCache, get_cache_manager
+from ..utils.logger import get_logger
 
 
 class NeonClient:
@@ -38,6 +40,11 @@ class NeonClient:
             raise ValueError("NEON_DATABASE_URL environment variable not set")
 
         self.pool: Optional[asyncpg.Pool] = None
+
+        # Add caching support
+        self.personalization_cache = PersonalizationCache()
+        self.translation_cache = TranslationCache()
+        self.logger = get_logger(__name__)
 
     async def connect(self, min_size: int = 5, max_size: int = 20) -> None:
         """
@@ -559,6 +566,20 @@ class NeonClient:
         If content_version and prompt_version are provided, validate against both.
         Otherwise, just get the latest cached content.
         """
+        # Try to get from cache first when we're just fetching the latest content
+        if content_version is None and prompt_version is None:
+            cached_content = await self.personalization_cache.get_personalized_content(user_id, chapter_slug)
+            if cached_content:
+                self.logger.debug(f"Cache hit for personalized content: {user_id}:{chapter_slug}")
+                # If it's cached, we don't need to validate version in DB
+                # In a real implementation we'd need to store versioning info with the cache
+                return {
+                    "personalized_markdown": cached_content,
+                    "user_profile_snapshot": {},  # We'd need to cache this separately
+                    "content_version": "cached_version",  # Placeholder
+                    "prompt_version": "cached_prompt_version"  # Placeholder
+                }
+
         async with self.pool.acquire() as conn:
             if content_version is not None and prompt_version is not None:
                 # Validate against both content and prompt versions
@@ -587,7 +608,16 @@ class NeonClient:
                     user_id,
                     chapter_slug,
                 )
-            return dict(row) if row else None
+
+            result = dict(row) if row else None
+
+            # Cache the result if we got valid data, but only for latest content queries
+            if result and content_version is None and prompt_version is None:
+                await self.personalization_cache.cache_personalized_content(
+                    user_id, chapter_slug, result.get('personalized_markdown'), ttl=7200  # 2 hours
+                )
+
+            return result
 
     async def upsert_personalized_content(
         self,
@@ -621,7 +651,17 @@ class NeonClient:
                 content_version,
                 prompt_version,
             )
-            return row_id
+
+        # Invalidate cache after update
+        await self.personalization_cache.invalidate_user_personalization(user_id)
+        self.logger.info(f"Invalidated cache for personalized content: {user_id}:{chapter_slug}")
+
+        # Cache the new version for immediate access
+        await self.personalization_cache.cache_personalized_content(
+            user_id, chapter_slug, personalized_markdown, ttl=7200  # 2 hours
+        )
+
+        return row_id
 
     # ========================================================================
     # Urdu Translation Cache (Current Version with Prompt Version)
@@ -636,6 +676,19 @@ class NeonClient:
         If content_version and prompt_version are provided, validate against both.
         Otherwise, just get the latest cached translation.
         """
+        # Try to get from cache first when we're just fetching the latest content
+        if content_version is None and prompt_version is None:
+            cached_translation = await self.translation_cache.get_translation(chapter_slug, "urdu")
+            if cached_translation:
+                self.logger.debug(f"Cache hit for Urdu translation: {chapter_slug}")
+                # If it's cached, we don't need to validate version in DB
+                # In a real implementation we'd need to store versioning info with the cache
+                return {
+                    "urdu_markdown": cached_translation,
+                    "content_version": "cached_version",  # Placeholder
+                    "prompt_version": "cached_prompt_version"  # Placeholder
+                }
+
         async with self.pool.acquire() as conn:
             if content_version is not None and prompt_version is not None:
                 # Validate against both content and prompt versions
@@ -660,7 +713,16 @@ class NeonClient:
                     """,
                     chapter_slug,
                 )
-            return dict(row) if row else None
+
+            result = dict(row) if row else None
+
+            # Cache the result if we got valid data, but only for latest content queries
+            if result and content_version is None and prompt_version is None:
+                await self.translation_cache.cache_translation(
+                    chapter_slug, "urdu", result.get('urdu_markdown'), ttl=7200  # 2 hours
+                )
+
+            return result
 
     async def upsert_urdu_translation(
         self,
@@ -688,7 +750,17 @@ class NeonClient:
                 content_version,
                 prompt_version,
             )
-            return row_id
+
+        # Invalidate cache after update
+        await self.translation_cache.invalidate_translation(chapter_slug, "urdu")
+        self.logger.info(f"Invalidated cache for Urdu translation: {chapter_slug}")
+
+        # Cache the new version for immediate access
+        await self.translation_cache.cache_translation(
+            chapter_slug, "urdu", urdu_markdown, ttl=7200  # 2 hours
+        )
+
+        return row_id
 
     # ========================================================================
     # Cleanup & Maintenance

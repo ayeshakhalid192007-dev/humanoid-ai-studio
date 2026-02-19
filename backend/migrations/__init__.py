@@ -1,0 +1,1 @@
+"""Database migrations for Physical AI platform."""

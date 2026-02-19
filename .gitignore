@@ -64,3 +64,9 @@ logs/
 
 # OS
 Thumbs.db
+book/.next/
+book/node_modules/
+book/build/
+auth-server/node_modules/
+backend/venv/
+backend/__pycache__/

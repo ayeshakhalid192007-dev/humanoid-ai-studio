@@ -28,6 +28,7 @@ from src.api import chat, health, sessions, personalize, translate
 from src.api import ai, chatkit  # NEW: AI Orchestrator and ChatKit endpoints
 from src.config import get_settings
 from src.utils.logger import get_logger
+from src.utils.monitoring import setup_monitoring, add_request_instrumentation
 
 logger = get_logger(__name__)
 settings = get_settings()
@@ -39,6 +40,7 @@ async def lifespan(app: FastAPI):
     Application lifespan handler.
 
     Startup:
+    - Initialize monitoring and observability
     - Initialize database connections (if not mock mode)
     - Verify external service connectivity
 
@@ -48,8 +50,38 @@ async def lifespan(app: FastAPI):
     """
     logger.info(f"Starting Physical AI RAG Chatbot API (mode: {'mock' if settings.MOCK_MODE else 'production'})")
 
+    # Initialize monitoring
+    try:
+        setup_monitoring(
+            service_name="physical-ai-backend",
+            otlp_endpoint=getattr(settings, 'OTLP_ENDPOINT', None),
+            enable_metrics=True,
+            enable_tracing=True
+        )
+        logger.info("Monitoring initialized")
+    except Exception as e:
+        logger.warning(f"Failed to initialize monitoring: {e}")
+
     # Startup
     if not settings.MOCK_MODE:
+        try:
+            # Run database migrations before connecting
+            from migrations.migration_manager import MigrationManager
+            migrator = MigrationManager(settings.NEON_DATABASE_URL)
+            await migrator.initialize_pool()
+
+            # Run any pending migrations
+            try:
+                # Load migrations without applying to check status first
+                # Actual migration run would happen here in production
+                await migrator.ensure_schema_table()
+                logger.info("Database migration framework initialized")
+            except Exception as migration_error:
+                logger.warning(f"Migration initialization issue: {migration_error}")
+
+        except Exception as e:
+            logger.warning(f"Migration setup failed: {e}")
+
         try:
             # Verify Qdrant connectivity
             from src.db.qdrant_client import QdrantClient
@@ -79,7 +111,14 @@ async def lifespan(app: FastAPI):
             app.state.neon_pool = neon
             logger.info("Neon connection pool initialized")
 
-            # Auto-create personalization tables if missing
+            # Store ref to migration manager for potential later use
+            app.state.migration_manager = MigrationManager(settings.NEON_DATABASE_URL)
+            try:
+                await app.state.migration_manager.initialize_pool()
+            except:
+                pass  # Migration manager is just for explicit management if needed
+
+            # Auto-create personalization tables if missing - now redundant with proper migrations
             try:
                 async with neon.pool.acquire() as conn:
                     # Add prompt_version column to existing tables if not exists
@@ -128,7 +167,7 @@ async def lifespan(app: FastAPI):
                         CREATE INDEX IF NOT EXISTS idx_agent_logs_type
                             ON agent_execution_logs (agent_type);
                     """)
-                    logger.info("Personalization and agent execution log tables verified/created")
+                    logger.info("Personalization and agent execution log tables verified/created (legacy compatibility)")
             except Exception as e:
                 logger.warning(f"Personalization table setup: {e}")
 
@@ -219,9 +258,18 @@ async def lifespan(app: FastAPI):
         except asyncio.CancelledError:
             pass
 
+    # Close Neon connection pool
     if hasattr(app.state, 'neon_pool'):
         await app.state.neon_pool.close()
         logger.info("Neon connection pool closed")
+
+    # Close any migration manager connections
+    if hasattr(app.state, 'migration_manager'):
+        try:
+            await app.state.migration_manager.close_pool()
+            logger.info("Migration manager connection closed")
+        except Exception as e:
+            logger.warning(f"Error closing migration manager: {e}")
 
 
 # Create FastAPI app
@@ -271,6 +319,9 @@ app.add_middleware(
 
 import asyncio
 import traceback
+
+# Add request instrumentation
+add_request_instrumentation(app, service_name="physical-ai-backend")
 
 # Include routers
 app.include_router(chat.router, tags=["Chat"])

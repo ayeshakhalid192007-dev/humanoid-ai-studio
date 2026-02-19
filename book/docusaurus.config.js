@@ -49,7 +49,10 @@ const config = {
         },
         blog: false, // Disable blog for now
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: [
+            require.resolve('./src/css/custom.css'),
+            require.resolve('./src/css/glassmorphism.css'),
+          ],
         },
       }),
     ],
@@ -171,21 +174,23 @@ const config = {
   //   mermaid: true,
   // },
 
-  // Plugins - removed for compatibility
-  // plugins: [],
+  // Plugins
+  plugins: [
+    require.resolve('./src/plugins/rag-chat-plugin'),
+  ],
 
-  // themes: [
-  //   [
-  //     require.resolve("@easyops-cn/docusaurus-search-local"),
-  //     /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */
-  //     ({
-  //       hashed: true,
-  //       language: ["en"],
-  //       highlightSearchTermsOnTargetPage: true,
-  //       explicitSearchResultPath: true,
-  //     }),
-  //   ],
-  // ],
+  themes: [
+    //   [
+    //     require.resolve("@easyops-cn/docusaurus-search-local"),
+    //     /** @type {import("@easyops-cn/docusaurus-search-local").PluginOptions} */
+    //     ({
+    //       hashed: true,
+    //       language: ["en"],
+    //       highlightSearchTermsOnTargetPage: true,
+    //       explicitSearchResultPath: true,
+    //     }),
+    //   ],
+  ],
 
   // Scripts for chatbot widget (to be added in Phase 3)
   scripts: [

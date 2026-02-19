@@ -3,6 +3,7 @@
  *
  * Wraps the original Docusaurus DocItem Content component
  * and injects the ChapterToolbar above the doc content.
+ * Enhanced with glassmorphism styling and animations.
  */
 
 import React from "react";
@@ -10,6 +11,7 @@ import Content from "@theme-original/DocItem/Content";
 import type ContentType from "@theme/DocItem/Content";
 import type { WrapperProps } from "@docusaurus/types";
 import BrowserOnly from "@docusaurus/BrowserOnly";
+import { motion } from 'framer-motion';
 
 type Props = WrapperProps<typeof ContentType>;
 
@@ -51,9 +53,16 @@ export default function ContentWrapper(props: Props): JSX.Element {
   return (
     <BrowserOnly fallback={<Content {...props} />}>
       {() => (
-        <ChapterToolbarWrapper>
-          <Content {...props} />
-        </ChapterToolbarWrapper>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="glass-card doc-content"
+        >
+          <ChapterToolbarWrapper>
+            <Content {...props} />
+          </ChapterToolbarWrapper>
+        </motion.div>
       )}
     </BrowserOnly>
   );

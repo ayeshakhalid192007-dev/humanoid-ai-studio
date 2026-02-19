@@ -75,4 +75,20 @@ export const auth = betterAuth({
     useSecureCookies: process.env.NODE_ENV === "production",
     cookiePrefix: "physical-ai",
   },
+  plugins: [
+    // Add security plugin
+    {
+      name: "security-headers",
+      routes: {
+        async beforeAuth(ctx) {
+          // Add security headers to all auth responses
+          ctx.response.headers.set("X-Content-Type-Options", "nosniff");
+          ctx.response.headers.set("X-Frame-Options", "DENY");
+          ctx.response.headers.set("X-XSS-Protection", "1; mode=block");
+          ctx.response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+          return ctx;
+        }
+      }
+    }
+  ]
 });

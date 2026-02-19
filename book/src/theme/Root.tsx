@@ -14,6 +14,7 @@
 import React, { useState, useEffect } from "react";
 import BrowserOnly from "@docusaurus/BrowserOnly";
 import { AuthProvider } from "../context/AuthContext";
+import { motion, AnimatePresence } from 'framer-motion';
 
 /**
  * RouteGuard — client-only component that enforces auth redirects.
@@ -68,21 +69,22 @@ export default function Root({ children }): JSX.Element {
   }, []);
 
   // AuthProvider wraps everything (SSR-safe — it just provides default context during SSR).
-  // RouteGuard and ChatbotWidget are client-only.
+  // RouteGuard is client-only.
   return (
     <AuthProvider>
       {isMounted ? (
         <BrowserOnly fallback={<>{children}</>}>
-          {() => {
-            const ChatbotWidget =
-              require("../components/ChatbotWidget").default;
-            return (
+          {() => (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
               <ClientRouteGuard>
                 {children}
-                <ChatbotWidget />
               </ClientRouteGuard>
-            );
-          }}
+            </motion.div>
+          )}
         </BrowserOnly>
       ) : (
         <>{children}</>

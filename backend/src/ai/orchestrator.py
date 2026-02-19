@@ -8,6 +8,7 @@ from .registry import AgentRegistry, SkillRegistry
 from .prompts.registry import PromptRegistry
 from .envelope import AIEnvelope, GenerationMetadata
 from ..db.neon_client import NeonClient
+from ..utils.error_handlers import ServiceError, ErrorCode
 
 
 class AIOrchestrator:
@@ -34,19 +35,37 @@ class AIOrchestrator:
         start_time = time.time()
 
         # Build AgentRequest from payload
-        request = self._build_agent_request(request_type, payload)
+        try:
+            request = self._build_agent_request(request_type, payload)
+        except Exception as e:
+            raise ServiceError(
+                ErrorCode.VALIDATION_ERROR,
+                f"Request validation failed: {str(e)}",
+                "orchestrator",
+                {"request_type": request_type}
+            )
 
         # Get and validate agent
         agent = self.agent_registry.get_agent(request_type)
         if not agent:
-            raise ValueError(f"Unknown agent type: {request_type}")
+            raise ServiceError(
+                ErrorCode.NOT_FOUND,
+                f"Unknown agent type: {request_type}",
+                "orchestrator",
+                {"request_type": request_type}
+            )
 
         # Get and validate required skills
         skill_names = agent.get_required_skills()
         skills = [self.skill_registry.get_skill(skill_name) for skill_name in skill_names]
         if any(s is None for s in skills):
             missing = [name for name, s in zip(skill_names, skills) if s is None]
-            raise ValueError(f"Missing required skills: {missing}")
+            raise ServiceError(
+                ErrorCode.VALIDATION_ERROR,
+                f"Missing required skills: {missing}",
+                "orchestrator",
+                {"request_type": request_type, "skills": skill_names}
+            )
 
         # Load prompt template with version
         template = self.prompt_registry.get_template(agent.get_agent_type())
@@ -213,9 +232,25 @@ class AIOrchestrator:
         start_time = time.time()
 
         # Build AgentRequest from payload (with stream=True)
-        request_dict = dict(payload)
-        request_dict['stream'] = True
-        request = self._build_agent_request(request_type, request_dict)
+        try:
+            request_dict = dict(payload)
+            request_dict['stream'] = True
+            request = self._build_agent_request(request_type, request_dict)
+        except Exception as e:
+            error_msg = f"Request validation failed for streaming: {str(e)}"
+            import traceback
+            print(f"Streaming execution ERROR: {error_msg}")
+            print(f"Traceback: {traceback.format_exc()}")
+            yield f"Error: {error_msg}"
+            return
+
+        # Get and validate agent
+        agent = self.agent_registry.get_agent(request_type)
+        if not agent:
+            error_msg = f"Unknown agent type: {request_type} for streaming"
+            print(f"Streaming execution ERROR: {error_msg}")
+            yield f"Error: {error_msg}"
+            return
 
         # Get and validate agent
         agent = self.agent_registry.get_agent(request_type)

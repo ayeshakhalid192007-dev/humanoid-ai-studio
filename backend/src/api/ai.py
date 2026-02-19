@@ -17,6 +17,10 @@ from ..db.neon_client import get_neon_client
 from ..config import get_settings
 from ..ai.orchestrator import AIOrchestrator
 from ..ai.envelope import AIEnvelope, ErrorResponse
+from ..utils.error_handlers import APIError, ServiceError, ErrorCode, handle_api_exception
+from ..utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 # Pydantic models for request/response validation
@@ -99,10 +103,20 @@ async def ai_personalize(
         # Execute through orchestrator
         result = await orchestrator.execute("personalization", payload)
         return result
+    except ServiceError as se:
+        logger.error(f"ServiceError in AI personalization: {se.message}")
+        raise HTTPException(status_code=se.status_code, detail=se.message)
+    except APIError as e:
+        logger.error(f"APIError in AI personalization: {e.message}")
+        raise HTTPException(status_code=e.status_code, detail=e.message)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # Handle validation errors
+        raise HTTPException(status_code=400, detail=f"Validation error: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Personalization failed: {str(e)}")
+        # Convert unexpected errors to standard errors
+        api_error = handle_api_exception(e)
+        logger.error(f"Personalization failed: {api_error.message}", exc_info=True)
+        raise HTTPException(status_code=api_error.status_code, detail=api_error.message)
 
 
 @router.post("/translate", response_model=AIEnvelope)
@@ -155,10 +169,20 @@ async def ai_translate(
         # Execute through orchestrator
         result = await orchestrator.execute("translation", payload)
         return result
+    except ServiceError as se:
+        logger.error(f"ServiceError in AI translation: {se.message}")
+        raise HTTPException(status_code=se.status_code, detail=se.message)
+    except APIError as e:
+        logger.error(f"APIError in AI translation: {e.message}")
+        raise HTTPException(status_code=e.status_code, detail=e.message)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # Handle validation errors
+        raise HTTPException(status_code=400, detail=f"Validation error: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Translation failed: {str(e)}")
+        # Convert unexpected errors to standard errors
+        api_error = handle_api_exception(e)
+        logger.error(f"Translation failed: {api_error.message}", exc_info=True)
+        raise HTTPException(status_code=api_error.status_code, detail=api_error.message)
 
 
 @router.post("/chat", response_model=AIEnvelope)
@@ -183,10 +207,20 @@ async def ai_chat(
         # Execute through orchestrator
         result = await orchestrator.execute("rag_chat", payload)
         return result
+    except ServiceError as se:
+        logger.error(f"ServiceError in AI chat: {se.message}")
+        raise HTTPException(status_code=se.status_code, detail=se.message)
+    except APIError as e:
+        logger.error(f"APIError in AI chat: {e.message}")
+        raise HTTPException(status_code=e.status_code, detail=e.message)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # Handle validation errors
+        raise HTTPException(status_code=400, detail=f"Validation error: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
+        # Convert unexpected errors to standard errors
+        api_error = handle_api_exception(e)
+        logger.error(f"Chat failed: {api_error.message}", exc_info=True)
+        raise HTTPException(status_code=api_error.status_code, detail=api_error.message)
 
 
 from fastapi.responses import StreamingResponse
@@ -218,8 +252,14 @@ async def ai_chat_stream(
                 yield f"data: {token}\n\n"
             # Send final message to complete the stream
             yield f"data: [DONE]\n\n"
+        except ServiceError as se:
+            logger.error(f"ServiceError in AI chat streaming: {se.message}")
+            yield f"event: error\ndata: {se.message}\n\n"
+            return
         except Exception as e:
-            yield f"event: error\ndata: {str(e)}\n\n"
+            api_error = handle_api_exception(e)
+            logger.error(f"Stream error: {api_error.message}", exc_info=True)
+            yield f"event: error\ndata: {str(api_error.message)}\n\n"
             return
 
     return StreamingResponse(generate_stream(), media_type="text/event-stream")
@@ -254,10 +294,20 @@ async def ai_chatkit(
         # Execute through orchestrator
         result = await orchestrator.execute("rag_chat", payload)
         return result
+    except ServiceError as se:
+        logger.error(f"ServiceError in AI chatkit: {se.message}")
+        raise HTTPException(status_code=se.status_code, detail=se.message)
+    except APIError as e:
+        logger.error(f"APIError in AI chatkit: {e.message}")
+        raise HTTPException(status_code=e.status_code, detail=e.message)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # Handle validation errors
+        raise HTTPException(status_code=400, detail=f"Validation error: {str(e)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"ChatKit processing failed: {str(e)}")
+        # Convert unexpected errors to standard errors
+        api_error = handle_api_exception(e)
+        logger.error(f"ChatKit processing failed: {api_error.message}", exc_info=True)
+        raise HTTPException(status_code=api_error.status_code, detail=api_error.message)
 
 
 @router.post("/chatkit/stream")
@@ -290,9 +340,16 @@ async def ai_chatkit_stream(
                     yield f"data: {token}\n\n"
                 elif token == "[DONE]":
                     yield f"data: [DONE]\n\n"
-        except Exception as e:
+        except ServiceError as se:
+            logger.error(f"ServiceError in AI chatkit streaming: {se.message}")
             # Send error event in ChatKit format
-            yield f'event: error\ndata: {str(e)}\n\n'
+            yield f'event: error\ndata: {str(se.message)}\n\n'
+            return
+        except Exception as e:
+            api_error = handle_api_exception(e)
+            logger.error(f"Stream error: {api_error.message}", exc_info=True)
+            # Send error event in ChatKit format
+            yield f'event: error\ndata: {str(api_error.message)}\n\n'
             return
 
     return StreamingResponse(

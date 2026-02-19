@@ -313,6 +313,84 @@ p code, li code {
 }
 
 /* ============================================================================
+   Glassmorphism Compatibility
+   ============================================================================ */
+
+/* Ensure glass cards take precedence over default styles */
+.glass-card {
+  all: unset;
+  all: revert;
+}
+
+/* Force glassmorphism styles to take precedence */
+.glass-card {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--glass-radius) !important;
+  box-shadow: var(--glass-shadow) !important;
+  transition: var(--glass-transition) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  padding: var(--glass-padding) !important;
+}
+
+.glass-card:hover {
+  transform: scale(var(--glass-hover-scale)) !important;
+  box-shadow: 0 12px 48px rgba(16, 185, 129, 0.3) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Text color overrides for glassmorphism */
+.glass-title, .hero__title {
+  color: var(--text-primary) !important;
+  background: linear-gradient(135deg, var(--neon-emerald), var(--neon-violet)) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+.glass-subtitle, .hero__subtitle {
+  color: var(--text-secondary) !important;
+}
+
+.glass-text {
+  color: var(--text-secondary) !important;
+}
+
+/* Button overrides */
+.button.glass-button {
+  background: var(--neon-gradient) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: calc(var(--glass-radius) / 2) !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: var(--glass-transition) !important;
+  min-height: 46px !important;
+  box-sizing: border-box !important;
+}
+
+.button.glass-button--outline {
+  background: transparent !important;
+  border: 2px solid var(--neon-emerald) !important;
+  color: var(--neon-emerald) !important;
+}
+
+.button.glass-button:hover {
+  transform: scale(var(--glass-hover-scale)) !important;
+  box-shadow: var(--neon-glow) !important;
+}
+
+.button.glass-button--outline:hover {
+  background: var(--neon-emerald) !important;
+  color: white !important;
+  box-shadow: var(--neon-glow) !important;
+}
+
+/* ============================================================================
    Table Styling
    ============================================================================ */
 

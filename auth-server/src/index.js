@@ -12,6 +12,7 @@ const { Pool } = pkg;
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./auth.js";
 import dotenv from "dotenv";
+import rateLimiter from "./utils/rate-limiter.js";
 
 dotenv.config();
 
@@ -22,6 +23,9 @@ const pool = new Pool({
   connectionString: process.env.NEON_DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
+
+// Initialize rate limiter
+await rateLimiter.initialize();
 
 // CORS
 app.use(
@@ -72,20 +76,31 @@ async function getSessionFromRequest(req) {
 const ALLOWED_ROBOTICS_LEVELS = ["none", "beginner", "intermediate", "advanced"];
 const MAX_TEXT_LENGTH = 2000;
 
-// Simple in-memory rate limiter for signup-related endpoints
-const rateLimitMap = new Map();
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const RATE_LIMIT_MAX = 10; // max requests per window
+// Rate limiting middleware using Redis
+async function checkRateLimit(req, res, next) {
+  const clientIp = req.ip || req.connection?.remoteAddress || 'unknown';
+  const endpoint = req.path; // Use endpoint as part of rate limit key
+  const rateLimitKey = `${clientIp}:${endpoint}`;
 
-function checkRateLimit(ip) {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW) {
-    rateLimitMap.set(ip, { windowStart: now, count: 1 });
-    return true;
+  const result = await rateLimiter.checkLimit(rateLimitKey);
+
+  if (!result.allowed) {
+    const retryAfter = result.retryAfter || 60; // Default to 60 seconds if not provided
+    res.set('Retry-After', retryAfter.toString());
+    res.set('X-RateLimit-Reset', result.resetTime);
+
+    return res.status(429).json({
+      error: "Too many requests. Please try again later.",
+      resetTime: result.resetTime,
+      retryAfter: retryAfter
+    });
   }
-  entry.count++;
-  return entry.count <= RATE_LIMIT_MAX;
+
+  // Set rate limit headers for successful requests
+  res.set('X-RateLimit-Remaining', result.remaining || 0);
+  res.set('X-RateLimit-Reset', result.resetTime);
+
+  next();
 }
 
 // Sanitize text input: trim, collapse whitespace, strip control chars
@@ -97,14 +112,9 @@ function sanitizeText(str) {
     .slice(0, MAX_TEXT_LENGTH);
 }
 
-// POST /api/profile — save onboarding profile
-app.post("/api/profile", async (req, res) => {
+// POST /api/profile — save onboarding profile (with rate limiting)
+app.post("/api/profile", checkRateLimit, async (req, res) => {
   try {
-    const clientIp = req.ip || req.connection?.remoteAddress;
-    if (!checkRateLimit(clientIp)) {
-      return res.status(429).json({ error: "Too many requests. Please wait." });
-    }
-
     const session = await getSessionFromRequest(req);
     if (!session?.user) {
       return res.status(401).json({ error: "Authentication required" });
@@ -184,10 +194,13 @@ app.get("/api/profile", async (req, res) => {
 app.get("/health", async (req, res) => {
   try {
     await pool.query("SELECT 1");
+    const rateLimiterStatus = await rateLimiter.healthCheck();
+
     res.json({
       status: "healthy",
       service: "Physical AI Auth Server",
       database: "Neon Postgres",
+      rateLimiter: rateLimiterStatus,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
@@ -226,8 +239,10 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`
+async function startServer() {
+  try {
+    app.listen(PORT, () => {
+      console.log(`
 ========================================
   Physical AI Auth Server v2
 ========================================
@@ -235,10 +250,18 @@ app.listen(PORT, () => {
   Environment: ${process.env.NODE_ENV || "development"}
   Database: Neon Postgres
   Auth: Better Auth SDK
+  Rate Limiting: ${rateLimiter.isEnabled ? 'Redis' : 'In-memory Fallback'}
 
   Auth Endpoints: /api/auth/* (Better Auth)
   Profile: POST/GET /api/profile
   Health: http://localhost:${PORT}/health
 ========================================
   `);
-});
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();

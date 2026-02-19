@@ -226,6 +226,27 @@ def log_timing(logger: logging.Logger, log_level: int = logging.INFO):
     return decorator
 
 
+class Logger:
+    """
+    Enhanced logger class for AI services.
+    """
+
+    def __init__(self, name: str = __name__):
+        self.logger = get_logger(name)
+
+    def info(self, message: str, extra: dict = None, exc_info: bool = False):
+        self.logger.info(message, extra=extra or {}, exc_info=exc_info)
+
+    def error(self, message: str, extra: dict = None, exc_info: bool = True):
+        self.logger.error(message, extra=extra or {}, exc_info=exc_info)
+
+    def warning(self, message: str, extra: dict = None):
+        self.logger.warning(message, extra=extra or {})
+
+    def debug(self, message: str, extra: dict = None):
+        self.logger.debug(message, extra=extra or {})
+
+
 # Example usage logger
 _example_logger = get_logger(__name__)
 _example_logger.info("Logger module initialized")

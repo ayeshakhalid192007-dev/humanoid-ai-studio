@@ -1,8 +1,6 @@
 """RAG Reasoning Agent module."""
 from typing import List, Dict, Any, AsyncGenerator
 import time
-import openai
-from openai import AsyncOpenAI
 
 from ..base import BaseAgent, AgentRequest, AgentResponse
 from ...services.retriever import Retriever
@@ -12,14 +10,14 @@ from ..prompts.registry import PromptRegistry
 from ...db.neon_client import NeonClient, get_neon_client
 from ...config import get_settings
 import hashlib
+from ..clients import get_openai_client
 
 
 class RAGReasoningAgent(BaseAgent):
     """AI agent for RAG reasoning with strict grounding requirements."""
 
-    def __init__(self, prompt_registry: PromptRegistry = None, neon_client: NeonClient = None):
-        # Use async OpenAI client
-        self.client = AsyncOpenAI()
+    def __init__(self, prompt_registry: PromptRegistry = None, neon_client: NeonClient = None, model: str = "gpt-4o-mini"):
+        self.model = model
         self.retriever = Retriever()
         self.embedder = Embedder()
         self.chapter_retriever = ChapterRetriever()
@@ -90,18 +88,20 @@ class RAGReasoningAgent(BaseAgent):
                 temperature = template.temperature
                 max_tokens = template.max_tokens
 
-        # Make the API call
+        # Get AI client and make the API call
         try:
-            response = await self.client.chat.completions.create(
-                model=self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else "gpt-4o-mini",
+            client = await get_openai_client(self.model)
+            response = await client.chat_completion(
                 messages=messages,
+                model=self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else self.model,
                 temperature=temperature,
                 max_tokens=max_tokens,
             )
 
-            answer = response.choices[0].message.content or ""
-            token_count = response.usage.total_tokens if response.usage else 0
-            model = response.model if response.model else "gpt-4o-mini"
+            # Extract response details from the cached/completed response
+            answer = response['choices'][0]['message']['content'] or ""
+            token_count = response['usage']['total_tokens'] if response.get('usage') else 0
+            model = response['model'] if response.get('model') else "gpt-4o-mini"
         except Exception as e:
             # Handle API errors gracefully
             answer = f"I encountered an issue processing your request: {str(e)}"
@@ -187,12 +187,14 @@ class RAGReasoningAgent(BaseAgent):
                 temperature = template.temperature
                 max_tokens = template.max_tokens
 
-        # Make the streaming API call
+        # For streaming, we'll call the regular OpenAI client directly but could update later
+        import openai
+        from openai import AsyncOpenAI
+
+        client = AsyncOpenAI(api_key=self.settings.OPENAI_API_KEY or openai.api_key)
         try:
-            # Get the async client instance
-            async_client = self.client
-            stream = await async_client.chat.completions.create(
-                model=self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else "gpt-4o-mini",
+            stream = await client.chat.completions.create(
+                model=self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else self.model,
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,

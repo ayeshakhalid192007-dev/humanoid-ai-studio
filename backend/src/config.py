@@ -9,7 +9,7 @@ Date: 2026-02-09
 """
 from functools import lru_cache
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -223,6 +223,50 @@ class Settings(BaseSettings):
     BETTER_AUTH_URL: str = Field(
         default="http://localhost:3002",
         description="Better Auth server URL for session validation"
+    )
+
+    # ========================================================================
+    # Cache Configuration (Redis)
+    # ========================================================================
+
+    REDIS_URL: Optional[str] = Field(
+        default=None,
+        description="Redis connection URL for distributed caching"
+    )
+    REDIS_DEFAULT_TTL: int = Field(
+        default=3600,  # 1 hour
+        ge=60,
+        le=86400,  # Max 24 hours
+        description="Default TTL for cache entries in seconds"
+    )
+    REDIS_MAX_CONNECTIONS: int = Field(
+        default=20,
+        ge=5,
+        le=100,
+        description="Maximum Redis connection pool size"
+    )
+
+    # ========================================================================
+    # Monitoring Configuration
+    # ========================================================================
+
+    OTLP_ENDPOINT: Optional[str] = Field(
+        default=None,
+        description="OTLP endpoint for OpenTelemetry metrics and traces"
+    )
+    ENABLE_METRICS: bool = Field(
+        default=True,
+        description="Enable Prometheus metrics collection"
+    )
+    ENABLE_TRACING: bool = Field(
+        default=True,
+        description="Enable distributed tracing"
+    )
+    METRICS_PORT: int = Field(
+        default=8001,
+        ge=1024,
+        le=65535,
+        description="Port for exposing Prometheus metrics"
     )
 
     # ========================================================================

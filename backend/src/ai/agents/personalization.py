@@ -1,21 +1,20 @@
 """Personalization Agent module."""
 from typing import List
 import time
-import openai
-from openai import AsyncOpenAI
 
 from ..base import BaseAgent, AgentRequest, AgentResponse
 from ...services.chapter_retriever import ChapterRetriever
 from ..prompts.registry import PromptRegistry
 from ...db.neon_client import NeonClient, get_neon_client
 from ...config import get_settings
+from ..clients import get_openai_client
 
 
 class PersonalizationAgent(BaseAgent):
     """AI agent for content personalization based on user profile."""
 
-    def __init__(self, prompt_registry: PromptRegistry = None, neon_client: NeonClient = None):
-        self.client = AsyncOpenAI()
+    def __init__(self, prompt_registry: PromptRegistry = None, neon_client: NeonClient = None, model: str = "gpt-4o-mini"):
+        self.model = model
         self.chapter_retriever = ChapterRetriever()
         self.prompt_registry = prompt_registry
         self.neon_client = neon_client
@@ -106,18 +105,20 @@ class PersonalizationAgent(BaseAgent):
                 temperature = template.temperature
                 max_tokens = template.max_tokens
 
-        # Make the API call
+        # Get AI client and make the API call
         try:
-            response = await self.client.chat.completions.create(
-                model=self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else "gpt-4o-mini",
+            client = await get_openai_client(self.model)
+            response = await client.chat_completion(
                 messages=messages,
+                model=self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else self.model,
                 temperature=temperature,
                 max_tokens=max_tokens,
             )
 
-            personalized_content = response.choices[0].message.content or ""
-            token_count = response.usage.total_tokens if response.usage else 0
-            model = response.model if response.model else "gpt-4o-mini"
+            # Extract response details from the cached/completed response
+            personalized_content = response['choices'][0]['message']['content'] or ""
+            token_count = response['usage']['total_tokens'] if response.get('usage') else 0
+            model = response['model'] if response.get('model') else "gpt-4o-mini"
         except Exception as e:
             # Handle API errors gracefully
             personalized_content = f"I encountered an issue processing your request: {str(e)}"

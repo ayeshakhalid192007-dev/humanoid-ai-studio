@@ -1,0 +1,727 @@
+/**
+ * Futuristic Glassmorphism Design System for Physical AI Platform
+ *
+ * Features:
+ * - Dark mode first glassmorphism design
+ * - Emerald/violet/magenta neon accents
+ * - Smooth animations with Framer Motion
+ * - Consistent component styling
+ * - Responsive glass cards
+ */
+
+/* ============================================================================
+   Global Glassmorphism Theme Variables
+   ============================================================================ */
+
+:root {
+  /* Glassmorphism base colors */
+  --glass-bg: rgba(30, 30, 40, 0.25);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-backdrop: rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+
+  /* Neon accent colors */
+  --neon-emerald: #10b981;
+  --neon-violet: #8b5cf6;
+  --neon-magenta: #ec4899;
+  --neon-gradient: linear-gradient(135deg, var(--neon-emerald), var(--neon-violet));
+  --neon-glow: 0 0 20px rgba(16, 185, 129, 0.5);
+
+  /* Text hierarchy */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  /* Spacing */
+  --glass-radius: 1.5rem;
+  --glass-padding: 1.5rem;
+  --glass-margin: 1rem;
+
+  /* Animation timing */
+  --glass-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --glass-hover-scale: 1.03;
+}
+
+/* Dark theme variables */
+[data-theme='dark'] {
+  --glass-bg: rgba(15, 23, 42, 0.3);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-backdrop: rgba(15, 23, 42, 0.1);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+}
+
+/* ============================================================================
+   Global Glassmorphism Styles
+   ============================================================================ */
+
+/* Apply glassmorphism to all pages */
+html {
+  background: linear-gradient(135deg, #0f172a, #1e293b, #0f172a);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+
+body {
+  background: transparent !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Glass card base style */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  box-shadow: var(--glass-shadow);
+  transition: var(--glass-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg,
+    transparent 0%,
+    rgba(16, 185, 129, 0.05) 50%,
+    transparent 100%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.glass-card:hover {
+  transform: scale(var(--glass-hover-scale);
+  box-shadow: 0 12px 48px rgba(16, 185, 129, 0.3);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* ============================================================================
+   Typography System
+   ============================================================================ */
+
+.glass-title {
+  font-family: 'Inter', 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 700;
+  font-size: 2.5rem;
+  line-height: 1.2;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, var(--neon-emerald), var(--neon-violet));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass-subtitle {
+  font-family: 'Inter', 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 500;
+  font-size: 1.25rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+.glass-text {
+  color: var(--text-secondary);
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+/* ============================================================================
+   Navigation & Header
+   ============================================================================ */
+
+.navbar {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  padding: 1rem 0 !important;
+}
+
+.navbar__inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.navbar__title {
+  background: var(--neon-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.navbar__item, .navbar__link {
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+  transition: var(--glass-transition) !important;
+}
+
+.navbar__item:hover, .navbar__link:hover {
+  color: var(--neon-emerald) !important;
+}
+
+/* ============================================================================
+   Buttons & Interactive Elements
+   ============================================================================ */
+
+.glass-button {
+  background: var(--neon-gradient);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: calc(var(--glass-radius) / 2);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--glass-transition);
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  min-height: 46px;
+  box-sizing: border-box;
+}
+
+.glass-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.glass-button:hover::before {
+  left: 100%;
+}
+
+.glass-button:hover {
+  transform: scale(var(--glass-hover-scale));
+  box-shadow: var(--neon-glow);
+}
+
+.glass-button--outline {
+  background: transparent;
+  border: 2px solid var(--neon-emerald);
+  color: var(--neon-emerald);
+}
+
+.glass-button--outline:hover {
+  background: var(--neon-emerald);
+  color: white;
+  box-shadow: var(--neon-glow);
+}
+
+/* Button sizing variants */
+.glass-button--sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  min-height: 38px;
+}
+
+.glass-button--lg {
+  padding: 1rem 2rem;
+  font-size: 1.125rem;
+  min-height: 52px;
+}
+
+/* Button state variants */
+.glass-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.glass-button:active {
+  transform: scale(0.98);
+}
+
+/* ============================================================================
+   Main Content Area
+   ============================================================================ */
+
+.main-wrapper {
+  background: transparent !important;
+}
+
+.container {
+  background: transparent !important;
+  max-width: 1400px !important;
+  padding: 0 1rem !important;
+}
+
+/* ============================================================================
+   Compatibility with Modern Homepage
+   ============================================================================ */
+
+.bg-white\/10 {
+  background-color: var(--glass-backdrop) !important;
+}
+
+.backdrop-blur-sm {
+  backdrop-filter: blur(8px) !important;
+}
+
+.backdrop-blur-xl {
+  backdrop-filter: blur(12px) !important;
+}
+
+.border-white\/20 {
+  border-color: var(--glass-border) !important;
+}
+
+.border-white\/10 {
+  border-color: var(--glass-border) !important;
+}
+
+/* Glass card variants for modern homepage compatibility */
+.glass-card-modern {
+  background: linear-gradient(135deg, #0f172a, #1e293b) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--glass-radius) !important;
+  box-shadow: var(--glass-shadow) !important;
+  transition: var(--glass-transition) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.glass-card-modern:hover {
+  transform: scale(1.03) !important;
+  box-shadow: 0 12px 48px rgba(16, 185, 129, 0.3) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Text compatibility */
+.text-white {
+  color: var(--text-primary) !important;
+}
+
+.text-gray-300 {
+  color: var(--text-secondary) !important;
+}
+
+.text-gray-400 {
+  color: var(--text-muted) !important;
+}
+
+.text-gray-500 {
+  color: var(--text-muted) !important;
+}
+
+/* ============================================================================
+   Sidebar (Glassmorphism)
+   ============================================================================ */
+
+.sidebar {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-right: 1px solid var(--glass-border) !important;
+  border-radius: 0 var(--glass-radius) var(--glass-radius) 0 !important;
+  padding: 1.5rem 1rem !important;
+}
+
+.sidebar__item {
+  margin-bottom: 0.5rem !important;
+}
+
+.sidebar__link {
+  color: var(--text-secondary) !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 0.5rem !important;
+  transition: var(--glass-transition) !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.sidebar__link:hover {
+  background: rgba(16, 185, 129, 0.1) !important;
+  color: var(--neon-emerald) !important;
+}
+
+.sidebar__link--active {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: var(--neon-emerald) !important;
+  position: relative !important;
+}
+
+.sidebar__link--active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--neon-emerald);
+  border-radius: 0 2px 2px 0;
+}
+
+/* ============================================================================
+   Doc Content (Glassmorphism)
+   ============================================================================ */
+
+.doc-content {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--glass-radius) !important;
+  padding: 2rem !important;
+  margin-bottom: 1.5rem !important;
+  box-shadow: var(--glass-shadow) !important;
+}
+
+/* ============================================================================
+   Footer (Glassmorphism)
+   ============================================================================ */
+
+.footer {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-top: 1px solid var(--glass-border) !important;
+  margin-top: 3rem !important;
+}
+
+.footer__title {
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  margin-bottom: 1rem !important;
+}
+
+.footer__link {
+  color: var(--text-secondary) !important;
+  opacity: 0.8 !important;
+  transition: var(--glass-transition) !important;
+}
+
+.footer__link:hover {
+  color: var(--neon-emerald) !important;
+  opacity: 1 !important;
+}
+
+/* ============================================================================
+   Code Blocks (Glassmorphism)
+   ============================================================================ */
+
+.code-block {
+  background: rgba(15, 23, 42, 0.5) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 0.75rem !important;
+  margin: 1rem 0 !important;
+  overflow: hidden !important;
+}
+
+/* ============================================================================
+   Chatbot Widget (Glassmorphism Enhancement)
+   ============================================================================ */
+
+.chatbot-widget {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  border-radius: var(--glass-radius) !important;
+}
+
+.chatbot-header {
+  background: linear-gradient(135deg, var(--neon-emerald), var(--neon-violet)) !important;
+  color: white !important;
+  border-radius: var(--glass-radius) var(--glass-radius) 0 0 !important;
+}
+
+.chatbot-message {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(4px) !important;
+  border-radius: 0.75rem !important;
+  border: 1px solid var(--glass-border) !important;
+  margin: 0.25rem 0 !important;
+}
+
+.chatbot-message.user {
+  background: linear-gradient(135deg, var(--neon-emerald), #22c55e) !important;
+  color: white !important;
+  border: none !important;
+}
+
+.chatbot-message.bot {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.chatbot-input {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text-primary) !important;
+  backdrop-filter: blur(4px) !important;
+  border-radius: 0.5rem !important;
+}
+
+.chatbot-send-button {
+  background: linear-gradient(135deg, var(--neon-emerald), var(--neon-violet)) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 0.5rem !important;
+  transition: var(--glass-transition) !important;
+}
+
+/* ============================================================================
+   Personalization & Translation Toggles (Glassmorphism)
+   ============================================================================ */
+
+.chapter-toolbar {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--glass-radius) !important;
+  padding: 0.75rem 1rem !important;
+  margin: 1rem 0 !important;
+  box-shadow: var(--glass-shadow) !important;
+}
+
+.toggle-button {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text-secondary) !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 0.5rem !important;
+  cursor: pointer !important;
+  transition: var(--glass-transition) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+.toggle-button.active {
+  background: linear-gradient(135deg, var(--neon-emerald), var(--neon-violet)) !important;
+  color: white !important;
+  box-shadow: var(--neon-glow) !important;
+}
+
+.toggle-button:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ============================================================================
+   Animations & Transitions
+   ============================================================================ */
+
+@keyframes glassFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glassSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes glassPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.glass-fade-in {
+  animation: glassFadeIn 0.6s ease-out forwards;
+}
+
+.glass-slide-up {
+  animation: glassSlideUp 0.8s ease-out forwards;
+}
+
+.glass-pulse {
+  animation: glassPulse 2s ease-in-out infinite;
+}
+
+/* Staggered animations */
+.glass-delay-1 { animation-delay: 0.1s; }
+.glass-delay-2 { animation-delay: 0.2s; }
+.glass-delay-3 { animation-delay: 0.3s; }
+.glass-delay-4 { animation-delay: 0.4s; }
+.glass-delay-5 { animation-delay: 0.5s; }
+
+/* ============================================================================
+   Responsive Design
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .glass-title {
+    font-size: 1.75rem !important;
+  }
+
+  .glass-subtitle {
+    font-size: 1rem !important;
+  }
+
+  .doc-content {
+    padding: 1.5rem !important;
+    border-radius: 1rem !important;
+  }
+
+  .sidebar {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border-radius: var(--glass-radius) !important;
+    margin: 1rem !important;
+  }
+
+  .chatbot-widget {
+    width: calc(100vw - 2rem) !important;
+    height: 50vh !important;
+  }
+}
+
+/* ============================================================================
+   Custom Admonitions (Glassmorphism)
+   ============================================================================ */
+
+.admonition {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-left: 4px solid var(--neon-emerald) !important;
+  border-radius: 0.75rem !important;
+  padding: 1rem !important;
+  margin: 1rem 0 !important;
+}
+
+.admonition--note {
+  border-left-color: var(--neon-violet) !important;
+}
+
+.admonition--tip {
+  border-left-color: var(--neon-emerald) !important;
+}
+
+.admonition--caution {
+  border-left-color: var(--neon-magenta) !important;
+}
+
+/* ============================================================================
+   Tables (Glassmorphism)
+   ============================================================================ */
+
+table {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 0.75rem !important;
+  overflow: hidden !important;
+}
+
+th, td {
+  border-bottom: 1px solid var(--glass-border) !important;
+  padding: 0.75rem 1rem !important;
+}
+
+th {
+  background: rgba(255, 255, 255, 0.1) !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+}
+
+tr:last-child td {
+  border-bottom: none !important;
+}
+
+/* ============================================================================
+   Mermaid Diagrams (Glassmorphism)
+   ============================================================================ */
+
+.mermaid {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 0.75rem !important;
+  padding: 1rem !important;
+  margin: 1rem 0 !important;
+}
+
+/* ============================================================================
+   Loading & Skeleton States
+   ============================================================================ */
+
+.skeleton {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.1) 25%,
+    rgba(255,255,255,0.2) 50%,
+    rgba(255,255,255,0.1) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 0.5rem;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ============================================================================
+   Custom Scrollbar (Glassmorphism)
+   ============================================================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
