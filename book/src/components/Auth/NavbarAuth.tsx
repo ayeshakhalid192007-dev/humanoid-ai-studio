@@ -65,7 +65,7 @@ function NavbarAuthInner() {
 
 export function NavbarAuth() {
   return (
-    <BrowserOnly fallback={<div style={{ width: 80 }} />}>
+    <BrowserOnly fallback={<div className={styles.navbarAuthButton} style={{ width: 80, minHeight: 40 }} />}>
       {() => <NavbarAuthInner />}
     </BrowserOnly>
   );

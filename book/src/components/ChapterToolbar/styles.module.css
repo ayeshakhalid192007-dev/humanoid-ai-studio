@@ -1,92 +1,154 @@
 /**
- * ChapterToolbar Styles
+ * Enhanced ChapterToolbar Styles with Glassmorphism
  *
  * Button layout, loading states, RTL content support,
  * and error display for personalization/translation toolbar.
+ * Updated for futuristic glassmorphism design.
  */
 
 .toolbar {
   margin-bottom: 1.5rem;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid var(--ifm-toc-border-color);
+  padding: 1.25rem;
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 1rem !important;
+  box-shadow: var(--glass-shadow) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.toolbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg,
+    transparent 0%,
+    rgba(99, 102, 241, 0.05) 50%,
+    transparent 100%);
+  pointer-events: none;
+  z-index: -1;
 }
 
 .buttonGroup {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.75rem;
   align-items: center;
 }
 
 .toolbarButton {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--ifm-color-primary);
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: transparent;
-  color: var(--ifm-color-primary);
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 0.75rem !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: var(--glass-transition) !important;
+  color: var(--text-primary) !important;
+  min-height: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.toolbarButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.6s;
+}
+
+.toolbarButton:hover:not(:disabled)::before {
+  left: 100%;
 }
 
 .toolbarButton:hover:not(:disabled) {
-  background: var(--ifm-color-primary);
-  color: white;
+  background: rgba(99, 102, 241, 0.1) !important;
+  border-color: var(--neon-blue) !important;
+  color: var(--neon-blue) !important;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.2) !important;
+  transform: scale(1.03) !important;
 }
 
 .toolbarButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .personalizeButton {
-  border-color: var(--ifm-color-primary);
-  color: var(--ifm-color-primary);
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6) !important;
+  color: white !important;
+  border: none !important;
+}
+
+.personalizeButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb, #7c3aed) !important;
+  color: white !important;
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3) !important;
 }
 
 .translateButton {
-  border-color: #6b46c1;
-  color: #6b46c1;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  color: white !important;
+  border: none !important;
 }
 
 .translateButton:hover:not(:disabled) {
-  background: #6b46c1;
-  color: white;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+  color: white !important;
+  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3) !important;
 }
 
 .revertButton {
-  border-color: #718096;
-  color: #718096;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid var(--glass-border) !important;
+  color: var(--text-secondary) !important;
 }
 
 .revertButton:hover:not(:disabled) {
-  background: #718096;
-  color: white;
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: var(--text-primary) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
 }
 
 .regenerateButton {
-  border-color: #dd6b20;
-  color: #dd6b20;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899) !important;
+  color: white !important;
+  border: none !important;
 }
 
 .regenerateButton:hover:not(:disabled) {
-  background: #dd6b20;
-  color: white;
+  background: linear-gradient(135deg, #7c3aed, #db2777) !important;
+  color: white !important;
+  box-shadow: 0 10px 20px rgba(139, 92, 246, 0.3) !important;
 }
 
 /* Loading spinner */
 .spinner {
   display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
   border-radius: 50%;
-  animation: spin 0.75s linear infinite;
+  animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
@@ -97,44 +159,49 @@
 
 /* Error bar */
 .errorBar {
-  margin-top: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: #fed7d7;
-  color: #c53030;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  margin-top: 1rem;
+  padding: 0.875rem 1.125rem !important;
+  background: rgba(220, 38, 38, 0.1) !important;
+  color: #fca5a5 !important;
+  border-radius: 0.75rem !important;
+  font-size: 0.9rem !important;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-}
-
-[data-theme="dark"] .errorBar {
-  background: #4a1a1a;
-  color: #feb2b2;
+  border: 1px solid rgba(220, 38, 38, 0.2) !important;
 }
 
 .retryButton {
-  padding: 0.25rem 0.75rem;
-  border: 1px solid currentColor;
-  border-radius: 4px;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-  font-size: 0.8rem;
+  padding: 0.5rem 1rem !important;
+  background: rgba(220, 38, 38, 0.2) !important;
+  border: 1px solid rgba(248, 113, 113, 0.3) !important;
+  border-radius: 0.5rem !important;
+  color: #fca5a5 !important;
+  cursor: pointer !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+  transition: var(--glass-transition) !important;
   white-space: nowrap;
 }
 
 .retryButton:hover {
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(248, 113, 113, 0.3) !important;
+  color: #fecaca !important;
 }
 
 /* RTL content container */
 .rtlContent {
   direction: rtl;
   text-align: right;
-  font-family: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", serif;
+  font-family: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", serif, var(--ifm-font-family-base);
   line-height: 2;
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  border-radius: 0.75rem !important;
+  padding: 1.5rem !important;
+  margin-top: 1rem;
 }
 
 .rtlContent code,
@@ -146,6 +213,9 @@
 
 .rtlContent pre {
   overflow-x: auto;
+  background: rgba(0, 0, 0, 0.2) !important;
+  border-color: var(--glass-border) !important;
+  border-radius: 0.5rem !important;
 }
 
 /* Responsive */
@@ -156,6 +226,6 @@
   }
 
   .toolbarButton {
-    justify-content: center;
+    width: 100%;
   }
 }

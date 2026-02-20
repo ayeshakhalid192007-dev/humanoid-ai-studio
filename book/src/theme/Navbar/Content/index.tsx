@@ -68,7 +68,7 @@ export default function NavbarContent(): JSX.Element {
               <div />
             </NavbarSearch>
           )}
-          <div className={styles.authContainer}>
+          <div className={`${styles.authContainer} md:flex hidden`}>
             <NavbarAuth />
           </div>
         </>

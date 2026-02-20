@@ -6,10 +6,16 @@
 
 .authContainer {
   margin-left: 0.5rem;
+  display: flex;
+  align-items: center;
+  z-index: var(--z-navbar);
 }
 
 @media (max-width: 996px) {
   .authContainer {
-    display: none;
+    margin-left: 0.5rem;
+    display: flex !important;
+    position: relative;
+    order: 10;
   }
 }

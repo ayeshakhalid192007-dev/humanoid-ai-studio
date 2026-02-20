@@ -16,30 +16,58 @@
 :root {
   /* Glassmorphism base colors */
   --glass-bg: rgba(30, 30, 40, 0.25);
+  --glass-bg-surface: rgba(21, 21, 32, 0.3); /* For #151520 surface color */
   --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border-light: rgba(255, 255, 255, 0.2);
   --glass-backdrop: rgba(255, 255, 255, 0.05);
   --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+  --glass-shadow-hover: 0 12px 48px rgba(99, 102, 241, 0.3);
+
+  /* Z-index hierarchy */
+  --z-background: -50;
+  --z-content: 0;
+  --z-navbar: 50;
+  --z-modal: 1000;
+  --z-dropdown: 1010;
 
   /* Neon accent colors */
+  --neon-blue: #3b82f6;
+  --neon-purple: #8b5cf6;
+  --neon-indigo: #6366f1;
   --neon-emerald: #10b981;
   --neon-violet: #8b5cf6;
   --neon-magenta: #ec4899;
-  --neon-gradient: linear-gradient(135deg, var(--neon-emerald), var(--neon-violet));
-  --neon-glow: 0 0 20px rgba(16, 185, 129, 0.5);
 
-  /* Text hierarchy */
+  /* Gradient colors */
+  --gradient-blue-start: #3b82f6;
+  --gradient-blue-end: #60a5fa;
+  --gradient-purple-start: #8b5cf6;
+  --gradient-purple-end: #a78bfa;
+  --gradient-indigo-start: #6366f1;
+  --gradient-indigo-end: #818cf8;
+  --neon-gradient-blue-purple: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+  --neon-gradient-blue-indigo: linear-gradient(135deg, var(--neon-blue), var(--neon-indigo));
+  --neon-gradient-purple-indigo: linear-gradient(135deg, var(--neon-purple), var(--neon-indigo));
+
+  /* Text hierarchy - Updated to use our specific brand colors */
   --text-primary: #f8fafc;
   --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
+  --text-light: #e2e8f0;
 
   /* Spacing */
-  --glass-radius: 1.5rem;
+  --glass-radius: 1.875rem; /* 30px corresponds to rounded-3xl */
+  --glass-radius-sm: 1rem; /* For smaller elements */
+  --glass-radius-lg: 2rem;  /* For larger elements */
   --glass-padding: 1.5rem;
+  --glass-padding-sm: 1rem;
+  --glass-padding-lg: 2rem;
   --glass-margin: 1rem;
 
   /* Animation timing */
   --glass-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --glass-hover-scale: 1.03;
+  --glass-hover-scale: 1.04;
+  --glass-stagger-base: 0.1s;
 }
 
 /* Dark theme variables */
@@ -76,9 +104,9 @@ body {
   background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--glass-radius);
-  box-shadow: var(--glass-shadow);
+  box-shadow: 0 4px 16px rgba(31, 38, 135, 0.1);
   transition: var(--glass-transition);
   position: relative;
   overflow: hidden;
@@ -100,9 +128,9 @@ body {
 }
 
 .glass-card:hover {
-  transform: scale(var(--glass-hover-scale);
-  box-shadow: 0 12px 48px rgba(16, 185, 129, 0.3);
-  border-color: rgba(16, 185, 129, 0.3);
+  transform: scale(var(--glass-hover-scale));
+  box-shadow: var(--glass-shadow-hover);
+  border-color: var(--neon-blue);
 }
 
 /* ============================================================================
@@ -148,31 +176,132 @@ body {
   -webkit-backdrop-filter: blur(12px) !important;
   border-bottom: 1px solid var(--glass-border) !important;
   padding: 1rem 0 !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: var(--z-navbar) !important;
+  box-shadow: var(--glass-shadow) !important;
 }
 
 .navbar__inner {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 1rem;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  position: relative;
+  z-index: var(--z-navbar) !important;
 }
 
 .navbar__title {
-  background: var(--neon-gradient);
+  background: var(--neon-gradient-blue-purple);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   font-weight: 700;
   font-size: 1.5rem;
+  transition: var(--glass-transition) !important;
 }
 
+.navbar__title:hover {
+  opacity: 0.8;
+}
+
+/* Enhanced navbar items and links */
 .navbar__item, .navbar__link {
   color: var(--text-secondary) !important;
   font-weight: 500 !important;
   transition: var(--glass-transition) !important;
+  position: relative !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 0.5rem !important;
+  text-decoration: none !important;
 }
 
-.navbar__item:hover, .navbar__link:hover {
-  color: var(--neon-emerald) !important;
+.navbar__item:not(.navbar__link--active):hover, .navbar__link:not(.navbar__link--active):hover {
+  color: var(--neon-blue) !important;
+  background: rgba(99, 102, 241, 0.1) !important;
+}
+
+/* Underline hover effect */
+.navbar__item:not(.navbar__link--active):hover::after,
+.navbar__link:not(.navbar__link--active):hover::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 1rem;
+  right: 1rem;
+  height: 2px;
+  background: var(--neon-blue);
+  border-radius: 1px;
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+/* Active link styling with glow */
+.navbar__link--active {
+  color: var(--neon-indigo) !important;
+  position: relative !important;
+  border-radius: 0.5rem !important;
+  padding: 0.5rem 1rem !important;
+}
+
+.navbar__link--active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 1rem;
+  right: 1rem;
+  height: 2px;
+  background: var(--neon-indigo);
+  border-radius: 1px;
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+.navbar__item.navbar__link--active,
+.navbar__link.navbar__link--active {
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.3) !important;
+  text-shadow: 0 0 4px rgba(99, 102, 241, 0.4) !important;
+}
+
+/* Enhanced search box and dropdown */
+.navbar__search-input {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 0.5rem !important;
+  padding: 0.5rem 1rem !important;
+  color: var(--text-secondary) !important;
+}
+
+.navbar__search-input::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* Hamburger menu styling */
+.menu__button {
+  border: 1px solid var(--glass-border) !important;
+  background: var(--glass-bg) !important;
+}
+
+/* Navbar sidebar items */
+.navbar-sidebar__item .menu__list-item {
+  border-bottom: 1px solid var(--glass-border) !important;
+  padding: 0.5rem 0 !important;
+}
+
+.navbar-sidebar__item .menu__link {
+  border-radius: 0.5rem !important;
+  transition: var(--glass-transition) !important;
+}
+
+.navbar-sidebar__item .menu__link:hover {
+  color: var(--neon-blue) !important;
+  background: rgba(99, 102, 241, 0.1) !important;
+  text-shadow: 0 0 10px rgba(99, 102, 241, 0.2) !important;
+}
+
+.navbar-sidebar__item .menu__link--active {
+  color: var(--neon-indigo) !important;
+  background: var(--glass-bg) !important;
 }
 
 /* ============================================================================
@@ -562,6 +691,15 @@ body {
   }
 }
 
+@keyframes slideIn {
+  from {
+    width: 0;
+  }
+  to {
+    width: calc(100% - 2rem);
+  }
+}
+
 .glass-fade-in {
   animation: glassFadeIn 0.6s ease-out forwards;
 }
@@ -725,3 +863,247 @@ tr:last-child td {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+
+/* ============================================================================
+   Design System Components
+   ============================================================================ */
+
+/* Glassmorphic Cards - Refined for the specification */
+.glass-card-3xl {
+  background: var(--glass-bg);
+  backdrop-filter: blur(36px);
+  -webkit-backdrop-filter: blur(36px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  box-shadow: var(--glass-shadow);
+  transition: var(--glass-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card-3xl:hover {
+  transform: scale(var(--glass-hover-scale));
+  box-shadow: var(--glass-shadow-hover);
+  border-color: var(--neon-blue);
+}
+
+/* New button variations to match the gradient system */
+.glass-button--primary {
+  background: var(--neon-gradient-blue-purple);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: calc(var(--glass-radius) / 2);
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--glass-transition);
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  min-height: 46px;
+  box-sizing: border-box;
+}
+
+.glass-button--primary:hover {
+  background: linear-gradient(135deg, var(--neon-blue), var(--neon-indigo));
+  box-shadow: var(--neon-glow-blue);
+  transform: scale(var(--glass-hover-scale));
+}
+
+/* Gradient text utilities */
+.text-gradient-blue-purple {
+  background: var(--neon-gradient-blue-purple);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-blue-indigo {
+  background: var(--neon-gradient-blue-indigo);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Section styling */
+.section {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+  position: relative;
+}
+
+.section--lg {
+  padding-top: 6rem;
+  padding-bottom: 6rem;
+}
+
+.section--xl {
+  padding-top: 8rem;
+  padding-bottom: 8rem;
+}
+
+/* Container with maximum width */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Backgrounds */
+.bg-futuristic-gradient {
+  background: linear-gradient(135deg, #0f0f14, #151520, #0f0f14);
+  background-size: 400% 400%;
+  animation: gradient-flow 15s ease infinite;
+}
+
+@keyframes gradient-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Glow borders */
+.glow-border {
+  position: relative;
+}
+
+.glow-border::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: var(--neon-gradient-blue-purple);
+  border-radius: 1.875rem; /* Match var(--glass-radius) */
+  z-index: -1;
+  filter: blur(10px);
+}
+
+/* Grid layouts */
+.grid-cols-responsive {
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+.grid-cols-responsive-2 {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+/* New Typography hierarchy (Inter/Geist fonts) */
+.h1 {
+  font-family: 'Inter', 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 800;
+  font-size: 3rem;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+
+.h2 {
+  font-family: 'Inter', 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 700;
+  font-size: 2.25rem;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+
+.h3 {
+  font-family: 'Inter', 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 700;
+  font-size: 1.875rem;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+}
+
+.h4 {
+  font-family: 'Inter', 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 600;
+  font-size: 1.5rem;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.body-lg {
+  font-family: 'Inter', 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.body-md {
+  font-family: 'Inter', 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.body-sm {
+  font-family: 'Inter', 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* Badge component */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px; /* Pill shape */
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge--primary {
+  background: var(--neon-gradient-blue-purple);
+  color: white;
+}
+
+.badge--secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border);
+}
+
+/* Hover animations */
+.hover-lift {
+  transition: var(--glass-transition);
+}
+
+.hover-lift:hover {
+  transform: translateY(-8px) scale(var(--glass-hover-scale));
+}
+
+.hover-glow {
+  transition: var(--glass-transition);
+}
+
+.hover-glow:hover {
+  box-shadow: var(--neon-glow-blue);
+}
+
+.hover-scale {
+  transition: var(--glass-transition);
+}
+
+.hover-scale:hover {
+  transform: scale(var(--glass-hover-scale));
+}
+
+/* Stagger animations */
+.stagger-1 { animation-delay: calc(1 * var(--glass-stagger-base)); }
+.stagger-2 { animation-delay: calc(2 * var(--glass-stagger-base)); }
+.stagger-3 { animation-delay: calc(3 * var(--glass-stagger-base)); }
+.stagger-4 { animation-delay: calc(4 * var(--glass-stagger-base)); }
+.stagger-5 { animation-delay: calc(5 * var(--glass-stagger-base)); }
+.stagger-6 { animation-delay: calc(6 * var(--glass-stagger-base)); }

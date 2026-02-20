@@ -161,7 +161,7 @@ const homepageContent = {
     links: {
       github: "https://github.com",
       contact: "mailto:contact@example.com",
-      community: "/community"
+      community: "/features"
     },
     copyright: "Physical AI Robotics"
   }
