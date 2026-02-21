@@ -1,10 +1,9 @@
 import React from 'react';
-import Layout from '@theme/Layout';
 import { motion } from 'framer-motion';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { Button, Card } from '../components/ui';
-import { GridBackground } from '../components/ui/GridBackground';
+import Layout from '@theme/Layout';
 
 // Use imported Button from centralized component library
 
@@ -133,27 +132,24 @@ const HeroSection = () => {
   const { hero } = homepageContent;
 
   return (
-    <section className="relative h-screen flex items-center justify-center overflow-hidden">
-      <GridBackground />
+    <section className="relative min-h-screen flex items-center justify-center">
+      {/* Background */}
+      <div className="absolute inset-0 bg-[#0f0f14]"></div>
+      <div className="absolute inset-0 bg-gradient-futuristic opacity-30"></div>
 
-      <div className="container mx-auto px-4 py-10 flex flex-col items-center justify-center text-center z-10 relative">
+      <div className="container mx-auto px-4 py-12 flex flex-col items-center justify-center text-center relative z-10">
         <motion.div
+          className="max-w-4xl mx-auto text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="max-w-6xl mx-auto"
+          transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <motion.h1
-            className="h1 text-gradient-blue-purple mb-6 leading-tight"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
+          <h1 className="h1 text-gradient-blue-purple mb-6 leading-tight">
             {hero.title}
-          </motion.h1>
+          </h1>
 
           <motion.p
-            className="body-lg text-gray-300 mb-10 max-w-3xl mx-auto"
+            className="body-lg text-gray-300 mb-8 max-w-2xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
@@ -162,7 +158,7 @@ const HeroSection = () => {
           </motion.p>
 
           <motion.div
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            className="flex flex-col sm:flex-row gap-4 justify-center mt-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
@@ -176,8 +172,6 @@ const HeroSection = () => {
           </motion.div>
         </motion.div>
       </div>
-
-      {/* Floating elements for visual interest - now using enhanced floating elements from background component */}
     </section>
   );
 };
@@ -186,7 +180,7 @@ const AboutSection = () => {
   const { about } = homepageContent;
 
   return (
-    <section className="py-20 bg-white/5 backdrop-blur-sm">
+    <section id="features" className="py-20 bg-white/5 backdrop-blur-sm">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center mb-16">
           <motion.h2
@@ -260,7 +254,7 @@ const PillarCard: React.FC<{
 
 const LearningPillars = () => {
   return (
-    <section className="py-20 bg-gradient-futuristic">
+    <section id="curriculum" className="py-20 bg-gradient-futuristic">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -342,6 +336,94 @@ const FeaturesOverview = () => {
   );
 };
 
+const TestimonialsSection = () => {
+  const testimonials = [
+    {
+      name: 'Sarah Chen',
+      role: 'Robotics Engineer at Boston Dynamics',
+      quote:
+        'The Predict-Execute-Reflect methodology completely changed how I approach learning. After completing the curriculum, I landed my dream job working on humanoid locomotion. The hands-on Gazebo projects were invaluable.',
+    },
+    {
+      name: 'Marcus Johnson',
+      role: 'AI Research Scientist',
+      quote:
+        'As someone transitioning from pure ML to robotics, this platform bridged the gap perfectly. The VLA module showed me how to connect large language models to real-world robot actions safely and effectively.',
+    },
+    {
+      name: 'Elena Rodriguez',
+      role: 'Graduate Student, Stanford',
+      quote:
+        'The AI assistant is a game-changer for learning. Being able to highlight confusing concepts and get instant explanations with citations saved me countless hours. Worth every minute spent on this curriculum.',
+    },
+  ];
+
+  return (
+    <section id="testimonials" className="py-20 bg-gradient-futuristic">
+      <div className="container mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <h2 className="h2 text-white mb-4">What Students Say</h2>
+          <p className="body-lg text-gray-300 max-w-3xl mx-auto">
+            Join hundreds of students and professionals advancing their robotics careers
+          </p>
+        </motion.div>
+
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          {testimonials.map((testimonial, index) => (
+            <motion.div
+              key={index}
+              className="glass-card rounded-2xl p-6 hover-lift"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              whileHover={{ scale: 1.04 }}
+            >
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg mr-4">
+                  {testimonial.name.charAt(0)}
+                </div>
+                <div>
+                  <h4 className="text-white font-semibold">{testimonial.name}</h4>
+                  <p className="text-gray-400 text-sm">{testimonial.role}</p>
+                </div>
+              </div>
+              <p className="text-gray-300 italic">"{testimonial.quote}"</p>
+            </motion.div>
+          ))}
+        </motion.div>
+
+        <motion.div
+          className="text-center mt-12"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          <Link
+            href="/auth/signup"
+            className="inline-block px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-purple-700"
+          >
+            Join Our Community
+          </Link>
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
 const Footer = () => {
   const { footer } = homepageContent;
 
@@ -388,6 +470,7 @@ export default function Home(): JSX.Element {
       <AboutSection />
       <LearningPillars />
       <FeaturesOverview />
+      <TestimonialsSection />
       <Footer />
     </Layout>
   );
