@@ -10,74 +10,78 @@ import { motion } from 'framer-motion';
 // Import the default Docusaurus Layout
 import OriginalLayout from '@theme-original/Layout';
 import Footer from '@theme/Footer';
+import FuturisticNavbar from '../components/Navigation/FuturisticNavbar';
 
-// Background animation component (neural network style)
+// Background animation component (minimalist geometric pattern)
 const AnimatedBackground = () => {
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900" />
+    <div className="fixed inset-0 -z-50 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 fm-gradient-bg" />
 
-      {/* Animated neural network overlay */}
+      {/* Minimalist geometric overlay */}
       <div className="absolute inset-0 opacity-20">
         <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
           <defs>
-            <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
-              <path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgb(16, 185, 129)" strokeWidth="0.5" opacity="0.3"/>
+            <pattern id="fm-grid" width="50" height="50" patternUnits="userSpaceOnUse">
+              <path d="M 25 0 L 0 0 0 25" fill="none" stroke="rgba(0, 255, 255, 0.1)" strokeWidth="0.5" opacity="0.5"/>
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
+          <rect width="100%" height="100%" fill="url(#fm-grid)" />
         </svg>
       </div>
 
-      {/* Floating animated elements */}
+      {/* Subtle floating elements */}
       <motion.div
-        className="absolute top-1/4 left-1/4 w-64 h-64 bg-emerald-500 rounded-full mix-blend-multiply filter blur-xl opacity-20"
+        className="absolute top-1/3 left-1/4 w-4 h-4 border border-fm-accent-primary opacity-30"
         animate={{
-          y: [-20, 20, -20],
-          x: [-20, 20, -20],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-      />
-      <motion.div
-        className="absolute top-3/4 right-1/4 w-72 h-72 bg-violet-500 rounded-full mix-blend-multiply filter blur-xl opacity-20"
-        animate={{
-          y: [20, -20, 20],
-          x: [20, -20, 20],
-        }}
-        transition={{
-          duration: 12,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-      />
-      <motion.div
-        className="absolute bottom-1/4 left-1/2 w-60 h-60 bg-magenta-500 rounded-full mix-blend-multiply filter blur-xl opacity-20"
-        animate={{
-          y: [-15, 15, -15],
-          x: [15, -15, 15],
+          y: [-10, 10, -10],
+          x: [-10, 10, -10],
+          rotate: [0, 90, 0]
         }}
         transition={{
           duration: 8,
           repeat: Infinity,
-          ease: "linear",
+          ease: "easeInOut",
+        }}
+      />
+      <motion.div
+        className="absolute top-2/5 right-1/3 w-4 h-4 border border-fm-accent-secondary opacity-30"
+        animate={{
+          y: [10, -10, 10],
+          x: [10, -10, 10],
+          rotate: [0, -90, 0]
+        }}
+        transition={{
+          duration: 10,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+      <motion.div
+        className="absolute bottom-1/3 left-1/2 w-4 h-4 border border-fm-accent-tertiary opacity-30"
+        animate={{
+          y: [-8, 8, -8],
+          x: [8, -8, 8],
+          rotate: [0, 45, 0]
+        }}
+        transition={{
+          duration: 7,
+          repeat: Infinity,
+          ease: "easeInOut",
         }}
       />
     </div>
   );
 };
 
-// Glassmorphism container component
-const GlassContainer = ({ children, className = "" }) => {
+// Futuristic container component
+const FuturisticContainer = ({ children, className = "" }) => {
   const { colorMode } = useColorMode();
   const isDark = colorMode !== 'light';
 
   return (
     <div className={clsx(
-      "glass-card min-h-screen relative",
+      "min-h-screen relative",
       className
     )}>
       {children}
@@ -104,25 +108,19 @@ export default function Layout(props) {
   const location = useLocation();
   const { isClient } = useDocusaurusContext();
 
-  // Don't apply glassmorphism to certain pages that need full control
-  const excludeGlassPages = ['/'];
-  const isGlassPage = !excludeGlassPages.some(path => location.pathname.includes(path));
-
-  const layoutContent = isGlassPage ? (
-    <GlassContainer>
+  const layoutContent = (
+    <FuturisticContainer>
       <StaggeredContent delay={0.1}>
         {children}
       </StaggeredContent>
-    </GlassContainer>
-  ) : (
-    <>{children}</>
+    </FuturisticContainer>
   );
 
+  // Only include the animated background since we have navbar in the swizzled theme
   return (
     <OriginalLayout {...layoutProps}>
       <AnimatedBackground />
       {layoutContent}
-      <Footer />
     </OriginalLayout>
   );
 }

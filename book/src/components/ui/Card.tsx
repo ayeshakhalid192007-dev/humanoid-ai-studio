@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 interface CardProps {
   children: React.ReactNode;
   className?: string;
-  variant?: 'default' | 'glass' | 'glass-3xl';
+  variant?: 'default' | 'glass' | 'glass-3xl' | 'elevated' | 'solid';
   hoverEffect?: boolean;
   glowEffect?: boolean;
 }
@@ -21,7 +21,9 @@ export const Card: React.FC<CardProps> = ({
   const variantClasses = {
     default: 'bg-white/10',
     glass: 'glass-card bg-white/10 backdrop-blur-sm border border-white/20',
-    'glass-3xl': 'glass-card-3xl bg-white/10 backdrop-blur-3xl border border-white/20 rounded-3xl'
+    'glass-3xl': 'glass-card-3xl bg-white/10 backdrop-blur-3xl border border-white/20 rounded-3xl',
+    elevated: 'bg-white/10 backdrop-blur-sm border border-white/20 shadow-2xl rounded-2xl',
+    solid: 'bg-white/20 border border-white/30 shadow-lg rounded-2xl'
   }[variant];
 
   const hoverClasses = hoverEffect
