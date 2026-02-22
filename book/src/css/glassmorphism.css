@@ -48,6 +48,19 @@
   --neon-gradient-blue-purple: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
   --neon-gradient-blue-indigo: linear-gradient(135deg, var(--neon-blue), var(--neon-indigo));
   --neon-gradient-purple-indigo: linear-gradient(135deg, var(--neon-purple), var(--neon-indigo));
+  --neon-gradient: linear-gradient(135deg, var(--neon-emerald), var(--neon-violet));
+
+  /* Neon glow effects */
+  --neon-glow: 0 0 15px rgba(59, 130, 246, 0.5);
+  --neon-glow-blue: 0 0 20px rgba(59, 130, 246, 0.7), 0 0 40px rgba(59, 130, 246, 0.3);
+  --neon-glow-emerald: 0 0 15px rgba(16, 185, 129, 0.5);
+  --neon-glow-violet: 0 0 15px rgba(139, 92, 246, 0.5);
+  --neon-glow-indigo: 0 0 15px rgba(99, 102, 241, 0.5);
+
+  /* Additional shadow utilities for components */
+  --shadow-blue-500-30: 0 0 10px rgba(59, 130, 246, 0.3);
+  --shadow-indigo-500-30: 0 0 10px rgba(99, 102, 241, 0.3);
+  --shadow-white-20: 0 0 10px rgba(255, 255, 255, 0.2);
 
   /* Text hierarchy - Updated to use our specific brand colors */
   --text-primary: #f8fafc;
@@ -191,6 +204,7 @@ body {
   justify-content: space-between !important;
   position: relative;
   z-index: var(--z-navbar) !important;
+  min-height: 60px;
 }
 
 .navbar__title {
@@ -357,6 +371,114 @@ body {
   background: var(--neon-emerald);
   color: white;
   box-shadow: var(--neon-glow);
+}
+
+/* Tailwind-compatible utility classes */
+.bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.bg-white\/20 {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.border-white\/20 {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.border-white\/30 {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Backdrop blur utilities */
+.backdrop-blur-sm {
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+.backdrop-blur-xl {
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.backdrop-blur-3xl {
+  backdrop-filter: blur(36px) !important;
+  -webkit-backdrop-filter: blur(36px) !important;
+}
+
+/* Shadow utilities */
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Rounded utility classes for card components */
+.rounded-2xl {
+  border-radius: 1rem !important;
+}
+
+.rounded-3xl {
+  border-radius: 1.875rem !important;
+}
+
+.rounded-full {
+  border-radius: 9999px !important;
+}
+
+/* Hover scale utilities */
+.hover-scale-\[1\.03\] {
+  transition: var(--glass-transition);
+}
+
+.hover-scale-\[1\.03\]:hover {
+  transform: scale(1.03) !important;
+}
+
+.hover-scale-\[1\.04\] {
+  transition: var(--glass-transition);
+}
+
+.hover-scale-\[1\.04\]:hover {
+  transform: scale(1.04) !important;
+}
+
+/* Hover translation utilities */
+.hover-translate-y-\[-8px\] {
+  transition: var(--glass-transition);
+}
+
+.hover-translate-y-\[-8px\]:hover {
+  transform: translateY(-8px) !important;
+}
+
+/* Hover opacity utilities */
+.opacity-50 {
+  opacity: 0.5 !important;
+}
+
+/* Cursor utilities */
+.cursor-not-allowed {
+  cursor: not-allowed !important;
+}
+
+/* Display/flex utilities */
+.flex {
+  display: flex !important;
+}
+
+.items-center {
+  align-items: center !important;
+}
+
+.justify-center {
+  justify-content: center !important;
+}
+
+.gap-2 {
+  gap: 0.5rem !important;
+}
+
+.gap-1 {
+  gap: 0.25rem !important;
 }
 
 /* Button sizing variants */

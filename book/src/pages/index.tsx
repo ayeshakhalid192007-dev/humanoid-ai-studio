@@ -155,7 +155,7 @@ const HeroSection = () => {
         </motion.p>
 
         <motion.div
-          className="fm-hero__cta fm-animated-element flex flex-col sm:flex-row gap-4"
+          className="fm-hero__cta fm-animated-element flex flex-col sm:flex-row items-center gap-4"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
@@ -168,8 +168,8 @@ const HeroSection = () => {
               {hero.ctaButtons.secondary}
             </Button>
           </div>
-          <div className="mt-2 text-center sm:text-left">
-            <Link to="/auth/login" className="text-fm-accent-primary hover:underline">
+          <div className="text-center sm:text-left mt-2 sm:mt-0">
+            <Link to="/auth/login" className="text-fm-accent-primary hover:underline inline-block">
               Already have an account? Sign in
             </Link>
           </div>
@@ -362,6 +362,68 @@ const TestimonialsSection = () => {
           </div>
         </div>
       </motion.div>
+    </section>
+  );
+};
+
+const TechnologyStack = () => {
+  const techStack = [
+    {
+      title: "ROS 2 Ecosystem",
+      description: "Leverage the power of Robot Operating System 2 for distributed robotics applications.",
+      icon: "🔄"
+    },
+    {
+      title: "NVIDIA Isaac Sim",
+      description: "High-fidelity simulation environment for testing and training robotic systems.",
+      icon: "🎮"
+    },
+    {
+      title: "OpenAI Integration",
+      description: "Advanced language models for natural human-robot interaction and reasoning.",
+      icon: "🧠"
+    },
+    {
+      title: "Computer Vision",
+      description: "State-of-the-art perception systems for real-world environment understanding.",
+      icon: "👁️"
+    }
+  ];
+
+  return (
+    <section className="fm-section fm-container">
+      <motion.div
+        className="text-center mb-16"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6 }}
+      >
+        <h2 className="fm-h2">Advanced Technology Stack</h2>
+        <p className="fm-body-lg fm-lead max-w-3xl mx-auto mt-4">
+          Cutting-edge tools and frameworks that power our robotics and AI education platform
+        </p>
+      </motion.div>
+
+      <div className="fm-features-grid fm-features-grid--2">
+        {techStack.map((tech, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: index * 0.1 }}
+          >
+            <Card variant="glass-3xl" hoverEffect={true} glowEffect={true}>
+              <div className="fm-flex-center mb-4">
+                <div className="text-3xl">{tech.icon}</div>
+              </div>
+              <h3 className="fm-h4 text-center">{tech.title}</h3>
+              <p className="fm-body-md text-center mt-2">{tech.description}</p>
+            </Card>
+          </motion.div>
+        ))}
+      </div>
     </section>
   );
 };

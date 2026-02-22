@@ -39,6 +39,26 @@ def _get_chapter_retriever() -> ChapterRetriever:
     return _chapter_retriever
 
 
+async def _get_content_version(chapter_slug: str, content: Optional[str]) -> str:
+    """
+    Helper function to get content version from chapter slug if content is not provided.
+
+    Args:
+        chapter_slug: The chapter slug to look up
+        content: The content that might be provided directly
+
+    Returns:
+        The content version string
+    """
+    if chapter_slug and not content:  # Only fetch if translating chapter, not custom content
+        from ..services.chapter_retriever import ChapterRetriever
+        retriever = ChapterRetriever()
+        chapter_data = await retriever.get_chapter_content(chapter_slug)
+        if chapter_data:
+            return chapter_data.get("version", "")
+    return ""
+
+
 def _get_client_identifier(request: Request) -> str:
     """Get client identifier for rate limiting (IP-based for public endpoint)."""
     forwarded = request.headers.get("x-forwarded-for")
@@ -102,13 +122,7 @@ async def translate_chapter(
         )
 
     # Fetch chapter content to get content version if translating a chapter (not custom content)
-    content_version = ""
-    if chapter_slug and not body.content:  # Only fetch if translating chapter, not custom content
-        from ..services.chapter_retriever import ChapterRetriever
-        retriever = ChapterRetriever()
-        chapter_data = await retriever.get_chapter_content(chapter_slug)
-        if chapter_data:
-            content_version = chapter_data.get("version", "")
+    content_version = await _get_content_version(chapter_slug, body.content)
 
     # Build payload for orchestrator
     payload = {

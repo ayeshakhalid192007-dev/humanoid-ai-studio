@@ -52,6 +52,7 @@ const config = {
           customCss: [
             require.resolve('./src/css/custom.css'),
             require.resolve('./src/css/glassmorphism.css'),
+            require.resolve('./src/css/futuristic-minimalism.css'),
           ],
         },
       }),
@@ -71,27 +72,13 @@ const config = {
         },
         items: [
           {
-            type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
-            position: 'left',
-            label: 'Curriculum',
-          },
-          {
-            to: '/features',
-            label: 'Features',
-            position: 'left',
-          },
-          {
-            to: '/testimonials',
-            label: 'Testimonials',
-            position: 'left',
-          },
-          {
             href: 'https://github.com/yourusername/physical_ai', // TODO: Replace
             label: 'GitHub',
             position: 'right',
           },
         ],
+        // Hide the default navbar items since we're using a swizzled navbar
+        hideOnScroll: false,
       },
       footer: {
         style: 'dark',

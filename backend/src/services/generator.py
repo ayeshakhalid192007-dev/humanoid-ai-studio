@@ -66,42 +66,9 @@ Be concise, accurate, and educational."""
         Returns:
             Dict with 'answer' and 'citations' fields
         """
-        # Build context from retrieved chunks
-        context_parts = []
-        citations = []
-
-        for i, chunk in enumerate(retrieved_chunks, 1):
-            context_parts.append(
-                f"[Source {i}] Module {chunk['module']}, {chunk['section_title']}:\n{chunk['text']}\n"
-            )
-            citations.append({
-                "module": chunk["module"],
-                "lesson": chunk["lesson"],
-                "section": chunk["section_title"],
-                "url": chunk["url"]
-            })
-
-        context = "\n".join(context_parts)
-
-        # Truncate if exceeds token limit (rough estimate: 1 token ≈ 4 chars)
-        max_context_chars = self.max_context_tokens * 4 - len(query) * 4 - 1000
-        if len(context) > max_context_chars:
-            context = context[:max_context_chars] + "\n[Context truncated...]"
-
-        # Build messages
-        messages = [
-            {"role": "system", "content": self.system_prompt},
-        ]
-
-        # Add conversation history if provided (last 3 turns)
-        if conversation_history:
-            for turn in conversation_history[-3:]:
-                messages.append({"role": "user", "content": turn.get("query", "")})
-                messages.append({"role": "assistant", "content": turn.get("response", "")})
-
-        # Add current query with context
-        user_message = f"Context from curriculum:\n{context}\n\nStudent question: {query}"
-        messages.append({"role": "user", "content": user_message})
+        # Build context and messages using shared helper
+        context, citations = self._build_context(retrieved_chunks)
+        messages = self._build_messages(query, context, conversation_history)
 
         try:
             # Generate answer
@@ -122,6 +89,67 @@ Be concise, accurate, and educational."""
         except Exception as e:
             raise RuntimeError(f"Answer generation failed: {str(e)}")
 
+    def _build_context(self, retrieved_chunks: List[Dict[str, Any]]) -> tuple:
+        """
+        Build context from retrieved chunks and extract citations.
+
+        Args:
+            retrieved_chunks: List of relevant curriculum chunks from retriever
+
+        Returns:
+            Tuple of (context string, citations list)
+        """
+        context_parts = []
+        citations = []
+
+        for i, chunk in enumerate(retrieved_chunks, 1):
+            context_parts.append(
+                f"[Source {i}] Module {chunk['module']}, {chunk['section_title']}:\n{chunk['text']}\n"
+            )
+            citations.append({
+                "module": chunk["module"],
+                "lesson": chunk["lesson"],
+                "section": chunk["section_title"],
+                "url": chunk["url"]
+            })
+
+        context = "\n".join(context_parts)
+        return context, citations
+
+    def _build_messages(self, query: str, context: str, conversation_history: List[Dict[str, str]] = None) -> List[Dict[str, str]]:
+        """
+        Build the message history for the OpenAI API call.
+
+        Args:
+            query: User's question
+            context: Retrieved curriculum context
+            conversation_history: Optional previous turns for context
+
+        Returns:
+            List of message dictionaries for the OpenAI API
+        """
+        # Truncate if exceeds token limit (rough estimate: 1 token ≈ 4 chars)
+        max_context_chars = self.max_context_tokens * 4 - len(query) * 4 - 1000
+        if len(context) > max_context_chars:
+            context = context[:max_context_chars] + "\n[Context truncated...]"
+
+        # Build messages
+        messages = [
+            {"role": "system", "content": self.system_prompt},
+        ]
+
+        # Add conversation history if provided (last 3 turns)
+        if conversation_history:
+            for turn in conversation_history[-3:]:
+                messages.append({"role": "user", "content": turn.get("query", "")})
+                messages.append({"role": "assistant", "content": turn.get("response", "")})
+
+        # Add current query with context
+        user_message = f"Context from curriculum:\n{context}\n\nStudent question: {query}"
+        messages.append({"role": "user", "content": user_message})
+
+        return messages
+
     async def generate_stream(
         self,
         query: str,
@@ -141,34 +169,9 @@ Be concise, accurate, and educational."""
         Yields:
             str: Answer text chunks as they arrive
         """
-        # Build context from retrieved chunks
-        context_parts = []
-        for i, chunk in enumerate(retrieved_chunks, 1):
-            context_parts.append(
-                f"[Source {i}] Module {chunk['module']}, {chunk['section_title']}:\n{chunk['text']}\n"
-            )
-
-        context = "\n".join(context_parts)
-
-        # Truncate if exceeds token limit
-        max_context_chars = self.max_context_tokens * 4 - len(query) * 4 - 1000
-        if len(context) > max_context_chars:
-            context = context[:max_context_chars] + "\n[Context truncated...]"
-
-        # Build messages
-        messages = [
-            {"role": "system", "content": self.system_prompt},
-        ]
-
-        # Add conversation history if provided (last 3 turns)
-        if conversation_history:
-            for turn in conversation_history[-3:]:
-                messages.append({"role": "user", "content": turn.get("query", "")})
-                messages.append({"role": "assistant", "content": turn.get("response", "")})
-
-        # Add current query with context
-        user_message = f"Context from curriculum:\n{context}\n\nStudent question: {query}"
-        messages.append({"role": "user", "content": user_message})
+        # Build context and messages using shared helper
+        context, _ = self._build_context(retrieved_chunks)
+        messages = self._build_messages(query, context, conversation_history)
 
         try:
             stream = await self.client.chat.completions.create(

@@ -71,10 +71,10 @@ export default function Testimonials(): JSX.Element {
           </div>
         </section>
         <section className={styles.ctaSection}>
-          <h2>Ready to Start Your Journey?</h2>
-          <p>Join our community of robotics enthusiasts and AI practitioners.</p>
-          <a href="/docs/intro" className={styles.ctaButton}>
-            Get Started
+          <h2>Ready to Unlock Bonus Features?</h2>
+          <p>Create an account to access personalized content, advanced AI features, and exclusive learning tools.</p>
+          <a href="/auth/signup" className={styles.ctaButton}>
+            Sign Up for Free
           </a>
         </section>
       </main>

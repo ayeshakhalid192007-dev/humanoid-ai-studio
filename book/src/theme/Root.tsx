@@ -5,16 +5,19 @@
  * - AuthProvider for authentication state (SSR-safe)
  * - RouteGuard for auth-based route protection (client-only)
  * - ChatbotWidget on all pages (client-only)
+ * - Proper hydration handling to prevent layout shifts
+ * - Consistent layout foundation with background management
  *
  * Route Protection Rules:
- * - Protected routes: /dashboard, /auth/onboarding (require authentication)
+ * - Protected routes: /dashboard, /auth/onboarding, /profile, /notes, /progress, /enroll (require authentication)
  * - Auth routes: /auth/login, /auth/signup (redirect to /dashboard if authenticated)
  * - Everything else (docs, features, home, etc.) is publicly accessible
  */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import BrowserOnly from "@docusaurus/BrowserOnly";
 import { AuthProvider } from "../context/AuthContext";
 import { motion, AnimatePresence } from 'framer-motion';
+import ChatbotWidget from "../components/ChatbotWidget/FuturisticChatbotWidget";
 
 /**
  * RouteGuard — client-only component that enforces auth redirects.
@@ -54,8 +57,19 @@ function ClientRouteGuard({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, isLoading, location.pathname, history]);
 
+  // Show a consistent loading state that matches the overall layout
   if (isLoading) {
-    return null;
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900"
+      >
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400"></div>
+        </div>
+      </motion.div>
+    );
   }
 
   return <>{children}</>;
@@ -72,23 +86,34 @@ export default function Root({ children }): JSX.Element {
   // RouteGuard is client-only.
   return (
     <AuthProvider>
-      {isMounted ? (
-        <BrowserOnly fallback={<>{children}</>}>
-          {() => (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <ClientRouteGuard>
-                {children}
-              </ClientRouteGuard>
-            </motion.div>
-          )}
-        </BrowserOnly>
-      ) : (
-        <>{children}</>
-      )}
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
+        {isMounted ? (
+          <BrowserOnly fallback={<div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900"></div>}>
+            {() => (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900"
+                >
+                  <ClientRouteGuard>
+                    {children}
+                    <Suspense fallback={null}>
+                      <ChatbotWidget />
+                    </Suspense>
+                  </ClientRouteGuard>
+                </motion.div>
+              </AnimatePresence>
+            )}
+          </BrowserOnly>
+        ) : (
+          <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-400"></div>
+          </div>
+        )}
+      </div>
     </AuthProvider>
   );
 }

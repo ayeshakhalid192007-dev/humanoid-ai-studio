@@ -1,9 +1,10 @@
 import React from 'react';
-import Layout from '@theme/Layout';
 import { motion } from 'framer-motion';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { Card, Badge } from '../components/ui';
+import AppLayout from '../components/Layout/AppLayout';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 // Define the chapter structure
 interface ChapterCardProps {
@@ -383,8 +384,8 @@ const ChaptersPage = () => {
   ];
 
   return (
-    <Layout title="Chapters" description="All learning chapters in the Physical AI curriculum organized by difficulty and module">
-      <div className="bg-[#0f0f14] min-h-screen">
+    <AppLayout title="Chapters" description="All learning chapters in the Physical AI curriculum organized by difficulty and module" background="default">
+      <ErrorBoundary>
         {/* Hero section */}
         <section className="py-20 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-futuristic"></div>
@@ -422,23 +423,29 @@ const ChaptersPage = () => {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6 }}
             >
-              {allChapters.map((chapter, index) => (
-                <ChapterCard
-                  key={index}
-                  title={chapter.title}
-                  description={chapter.description}
-                  path={chapter.path}
-                  duration={chapter.duration}
-                  difficulty={chapter.difficulty}
-                  module={chapter.module}
-                  index={index}
-                />
-              ))}
+              {allChapters && allChapters.length > 0 ? (
+                allChapters.map((chapter, index) => (
+                  <ChapterCard
+                    key={index}
+                    title={chapter.title}
+                    description={chapter.description}
+                    path={chapter.path}
+                    duration={chapter.duration}
+                    difficulty={chapter.difficulty}
+                    module={chapter.module}
+                    index={index}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-12">
+                  <p className="text-gray-400 text-lg">Loading curriculum...</p>
+                </div>
+              )}
             </motion.div>
           </div>
         </section>
-      </div>
-    </Layout>
+      </ErrorBoundary>
+    </AppLayout>
   );
 };
 

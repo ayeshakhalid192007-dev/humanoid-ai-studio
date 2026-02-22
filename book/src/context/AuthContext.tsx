@@ -52,6 +52,7 @@ interface AuthContextType {
   session: Session | null;
   profile: UserProfile | null;
   isLoading: boolean;
+  error: string | null;
   isAuthenticated: boolean;
   needsOnboarding: boolean;
   signUp: (
@@ -86,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const isAuthenticated = !!user && !!session;
   const needsOnboarding = isAuthenticated && !user.onboardingCompleted;
@@ -93,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Fetch current session — Better Auth uses /api/auth/get-session
   const refreshSession = useCallback(async () => {
     try {
+      setError(null); // Clear any previous errors
       const response = await fetch(`${AUTH_API_URL}/api/auth/get-session`, {
         method: "GET",
         credentials: "include",
@@ -116,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Session refresh error:", error);
+      setError(error instanceof Error ? error.message : "Failed to refresh session");
       setUser(null);
       setSession(null);
     } finally {
@@ -131,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Fetch user profile
   const fetchProfile = useCallback(async () => {
     try {
+      setError(null); // Clear any previous errors
       const response = await fetch(`${AUTH_API_URL}/api/profile`, {
         method: "GET",
         credentials: "include",
@@ -145,9 +150,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             roboticsKnowledge: data.profile.robotics_knowledge,
           });
         }
+      } else {
+        const errorData = await response.json();
+        setError(errorData.error || "Failed to fetch profile");
       }
     } catch (error) {
       console.error("Fetch profile error:", error);
+      setError(error instanceof Error ? error.message : "Failed to fetch profile");
     }
   }, []);
 
@@ -158,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     name: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
+      setError(null); // Clear any previous errors
       setIsLoading(true);
 
       const response = await fetch(`${AUTH_API_URL}/api/auth/sign-up/email`, {
@@ -193,6 +203,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         return { success: false, error: "Unexpected response" };
       } else {
+        setError(data.message || data.error || "Sign up failed");
         return {
           success: false,
           error: data.message || data.error || "Sign up failed",
@@ -200,6 +211,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Sign up error:", error);
+      setError(error instanceof Error ? error.message : "Network error. Please try again.");
       return {
         success: false,
         error: "Network error. Please try again.",
@@ -217,6 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profileData: UserProfile
   ): Promise<{ success: boolean; error?: string }> => {
     try {
+      setError(null); // Clear any previous errors
       setIsLoading(true);
 
       // Step 1: Create account
@@ -233,15 +246,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const signUpData = await signUpResponse.json();
 
       if (!signUpResponse.ok) {
+        const error = signUpData.message || signUpData.error || "Sign up failed";
+        setError(error);
         return {
           success: false,
-          error: signUpData.message || signUpData.error || "Sign up failed",
+          error: error,
         };
       }
 
       const userData = signUpData.user || signUpData;
       if (!userData.id) {
-        return { success: false, error: "Unexpected response from server" };
+        const error = "Unexpected response from server";
+        setError(error);
+        return { success: false, error: error };
       }
 
       // Set user/session immediately so profile save has auth context
@@ -264,9 +281,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Account created but profile failed — user can complete onboarding later
         console.error("Profile save failed after signup:", profileResult.error);
         await refreshSession();
+        const partialError = "Account created but profile save failed. You can complete onboarding later.";
+        setError(partialError);
         return {
           success: true,
-          error: "Account created but profile save failed. You can complete onboarding later.",
+          error: partialError,
         };
       }
 
@@ -278,6 +297,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: true };
     } catch (error) {
       console.error("Sign up with profile error:", error);
+      const errorMsg = error instanceof Error ? error.message : "Network error. Please try again.";
+      setError(errorMsg);
       return {
         success: false,
         error: "Network error. Please try again.",
@@ -293,6 +314,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
+      setError(null); // Clear any previous errors
       setIsLoading(true);
 
       const response = await fetch(`${AUTH_API_URL}/api/auth/sign-in/email`, {
@@ -310,6 +332,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await refreshSession();
         return { success: true };
       } else {
+        setError(data.message || data.error || "Invalid credentials");
         return {
           success: false,
           error: data.message || data.error || "Invalid credentials",
@@ -317,6 +340,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Sign in error:", error);
+      setError(error instanceof Error ? error.message : "Network error. Please try again.");
       return {
         success: false,
         error: "Network error. Please try again.",
@@ -329,17 +353,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign out
   const signOut = async (): Promise<void> => {
     try {
+      setError(null); // Clear any previous errors
       setIsLoading(true);
 
-      await fetch(`${AUTH_API_URL}/api/auth/sign-out`, {
+      const response = await fetch(`${AUTH_API_URL}/api/auth/sign-out`, {
         method: "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
       });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.message || data.error || "Sign out failed");
+      }
     } catch (error) {
       console.error("Sign out error:", error);
+      setError(error instanceof Error ? error.message : "Sign out failed");
     } finally {
       setUser(null);
       setSession(null);
@@ -353,6 +384,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     profileData: UserProfile
   ): Promise<{ success: boolean; error?: string }> => {
     try {
+      setError(null); // Clear any previous errors
+      setIsLoading(true);
       const response = await fetch(`${AUTH_API_URL}/api/profile`, {
         method: "POST",
         credentials: "include",
@@ -369,6 +402,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         );
         return { success: true };
       } else {
+        setError(data.error || "Failed to save profile");
         return {
           success: false,
           error: data.error || "Failed to save profile",
@@ -376,10 +410,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Save profile error:", error);
+      const errorMsg = error instanceof Error ? error.message : "Network error. Please try again.";
+      setError(errorMsg);
       return {
         success: false,
         error: "Network error. Please try again.",
       };
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -388,6 +426,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     profile,
     isLoading,
+    error,
     isAuthenticated,
     needsOnboarding,
     signUp,

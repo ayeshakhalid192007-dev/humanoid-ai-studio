@@ -6,9 +6,10 @@
  */
 
 import React from "react";
-import Layout from "@theme/Layout";
 import Link from "@docusaurus/Link";
 import BrowserOnly from "@docusaurus/BrowserOnly";
+import { AppLayout } from "../components/Layout/AppLayout";
+import ErrorBoundary from "../components/ErrorBoundary";
 import styles from "./dashboard.module.css";
 
 const modules = [
@@ -112,16 +113,18 @@ function DashboardContent() {
 
 export default function DashboardPage(): JSX.Element {
   return (
-    <Layout title="Dashboard" description="Your learning dashboard">
-      <BrowserOnly
-        fallback={
-          <div className={styles.dashboard}>
-            <p>Loading dashboard...</p>
-          </div>
-        }
-      >
-        {() => <DashboardContent />}
-      </BrowserOnly>
-    </Layout>
+    <AppLayout title="Dashboard" description="Your learning dashboard" background="default">
+      <ErrorBoundary>
+        <BrowserOnly
+          fallback={
+            <div className={styles.dashboard}>
+              <p>Loading dashboard...</p>
+            </div>
+          }
+        >
+          {() => <DashboardContent />}
+        </BrowserOnly>
+      </ErrorBoundary>
+    </AppLayout>
   );
 }

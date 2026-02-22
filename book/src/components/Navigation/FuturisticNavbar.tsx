@@ -16,14 +16,14 @@ const FuturisticNavbar = () => {
       setIsScrolled(window.scrollY > 10);
     };
 
-    window.addEventListener('scroll', handleScroll);
+    // Use passive event listener for better performance
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const navLinks = [
-    { name: 'Features', href: '#features' },
+    { name: 'Home', href: '/' },
     { name: 'Curriculum', href: '/chapters' },
-    { name: 'Testimonials', href: '#testimonials' },
     { name: 'Dashboard', href: '/dashboard' },
   ];
 
@@ -69,15 +69,26 @@ const FuturisticNavbar = () => {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`fm-navbar__link ${isActiveLink ? 'fm-navbar__link--active' : ''}`}
+                className={`fm-navbar__link transition-all duration-300 ${
+                  isActiveLink ? 'fm-navbar__link--active' : 'hover:fm-text-primary'
+                }`}
                 onClick={(e) => {
                   if (isAnchorLink && location.pathname === '/') {
                     e.preventDefault();
-                    const targetElement = document.querySelector(link.href);
-                    if (targetElement) {
-                      targetElement.scrollIntoView({
-                        behavior: 'smooth'
-                      });
+                    try {
+                      const targetElement = document.querySelector(link.href);
+                      if (targetElement) {
+                        const elementPosition = targetElement.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - 100; // Account for fixed navbar
+                        window.scrollTo({
+                          top: offsetPosition,
+                          behavior: 'smooth'
+                        });
+                      }
+                    } catch (error) {
+                      console.warn('Error scrolling to element:', error);
+                      // Fallback to regular navigation if smooth scrolling fails
+                      window.location.hash = link.href;
                     }
                   }
                 }}
@@ -137,17 +148,27 @@ const FuturisticNavbar = () => {
                   <Link
                     key={link.name}
                     href={link.href}
-                    className={`block py-2 text-fm-text-secondary hover:text-fm-accent-primary ${isActiveLink ? 'text-fm-accent-primary' : ''}`}
+                    className={`block py-2 text-fm-text-secondary hover:text-fm-accent-primary hover:fm-bg-tertiary transition-all duration-300 p-2 rounded-md ${isActiveLink ? 'text-fm-accent-primary' : ''}`}
                     onClick={(e) => {
                       if (isAnchorLink && location.pathname === '/') {
                         e.preventDefault();
-                        const targetElement = document.querySelector(link.href);
-                        if (targetElement) {
-                          targetElement.scrollIntoView({
-                            behavior: 'smooth'
-                          });
+                        try {
+                          const targetElement = document.querySelector(link.href);
+                          if (targetElement) {
+                            const elementPosition = targetElement.getBoundingClientRect().top;
+                            const offsetPosition = elementPosition + window.pageYOffset - 100; // Account for fixed navbar
+                            window.scrollTo({
+                              top: offsetPosition,
+                              behavior: 'smooth'
+                            });
+                          }
+                        } catch (error) {
+                          console.warn('Error scrolling to element:', error);
+                          // Fallback to regular navigation if smooth scrolling fails
+                          window.location.hash = link.href;
                         }
                       }
+                      // Close mobile menu after any click
                       setIsMobileMenuOpen(false);
                     }}
                   >

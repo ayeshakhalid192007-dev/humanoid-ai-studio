@@ -1,6 +1,5 @@
 import React from 'react';
 import {useLocation} from '@docusaurus/router';
-import {useColorMode} from '@docusaurus/theme-common';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import clsx from 'clsx';
 
@@ -10,7 +9,6 @@ import { motion } from 'framer-motion';
 // Import the default Docusaurus Layout
 import OriginalLayout from '@theme-original/Layout';
 import Footer from '@theme/Footer';
-import FuturisticNavbar from '../components/Navigation/FuturisticNavbar';
 
 // Background animation component (minimalist geometric pattern)
 const AnimatedBackground = () => {
@@ -76,9 +74,6 @@ const AnimatedBackground = () => {
 
 // Futuristic container component
 const FuturisticContainer = ({ children, className = "" }) => {
-  const { colorMode } = useColorMode();
-  const isDark = colorMode !== 'light';
-
   return (
     <div className={clsx(
       "min-h-screen relative",
@@ -108,6 +103,33 @@ export default function Layout(props) {
   const location = useLocation();
   const { isClient } = useDocusaurusContext();
 
+  // Check if current page is using AppLayout to prevent duplicate layouts
+  // Be very specific to avoid affecting documentation pages which use standard Docusaurus layout
+  const isUsingAppLayout = [
+    '/chapters',
+    '/dashboard',
+    '/profile',
+    '/notes',
+    '/progress',
+    '/enroll'
+  ].some(path =>
+    location.pathname === path ||
+    location.pathname === path + '/' ||
+    location.pathname.startsWith(path + '/')
+  ) || location.pathname.startsWith('/auth/');
+
+  // Only include the animated background since we have navbar in the swizzled theme
+  // Don't render OriginalLayout if using AppLayout to avoid double layout
+  if (isUsingAppLayout) {
+    return (
+      <FuturisticContainer>
+        <StaggeredContent delay={0.1}>
+          {children}
+        </StaggeredContent>
+      </FuturisticContainer>
+    );
+  }
+
   const layoutContent = (
     <FuturisticContainer>
       <StaggeredContent delay={0.1}>
@@ -116,7 +138,6 @@ export default function Layout(props) {
     </FuturisticContainer>
   );
 
-  // Only include the animated background since we have navbar in the swizzled theme
   return (
     <OriginalLayout {...layoutProps}>
       <AnimatedBackground />

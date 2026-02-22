@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import Link from '@docusaurus/Link';
-import { useLocation } from '@docusaurus/router';
-import { NavbarAuth } from '../Auth';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from '@docusaurus/Link';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import { useLocation } from '@docusaurus/router';
 
-// Custom Navbar component that doesn't rely on Docusaurus internal context
-const CustomNavbar = () => {
+const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { siteConfig } = useDocusaurusContext();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -19,25 +19,15 @@ const CustomNavbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Define navigation items - different set for home vs other pages
-  const isHomePage = location.pathname === '/';
-
-  const navLinks = isHomePage
-    ? [
-        { name: 'Features', href: '#features' },
-        { name: 'Curriculum', href: '#curriculum' },
-        { name: 'Testimonials', href: '#testimonials' },
-      ]
-    : [
-        { name: 'Curriculum', href: '/docs/intro' },
-        { name: 'Features', href: '/features' },
-        { name: 'Testimonials', href: '/testimonials' },
-        { name: 'Chapters', href: '/chapters' },
-      ];
+  const navLinks = [
+    { name: 'Features', href: '#features' },
+    { name: 'Curriculum', href: '#curriculum' },
+    { name: 'Testimonials', href: '#testimonials' },
+  ];
 
   const isActive = (href: string) => {
     const section = href.split('#')[1];
-    if (!section || !isHomePage) return false;
+    if (!section || location.pathname !== '/') return false;
     return false; // We'll handle active state differently for anchor links
   };
 
@@ -62,6 +52,7 @@ const CustomNavbar = () => {
           <div className="hidden md:block">
             <div className="flex items-center space-x-8">
               {navLinks.map((link) => {
+                // Check if it's an anchor link (starts with #)
                 const isAnchorLink = link.href.startsWith('#');
 
                 return (
@@ -70,7 +61,7 @@ const CustomNavbar = () => {
                     href={link.href}
                     className="text-gray-300 hover:text-white transition-colors duration-200"
                     onClick={(e) => {
-                      if (isAnchorLink && isHomePage) {
+                      if (isAnchorLink && location.pathname === '/') {
                         e.preventDefault();
                         const targetElement = document.querySelector(link.href);
                         if (targetElement) {
@@ -90,13 +81,24 @@ const CustomNavbar = () => {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <NavbarAuth />
+            <Link
+              href="/signin"
+              className="px-4 py-2 text-gray-300 hover:text-white border border-gray-600 hover:border-gray-400 rounded-lg transition-all duration-200"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/signup"
+              className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              Create Account
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
             <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="text-gray-300 hover:text-white focus:outline-none"
             >
               <svg
@@ -105,7 +107,7 @@ const CustomNavbar = () => {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                {isMenuOpen ? (
+                {isMobileMenuOpen ? (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 ) : (
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -118,7 +120,7 @@ const CustomNavbar = () => {
 
       {/* Mobile Menu */}
       <AnimatePresence>
-        {isMenuOpen && (
+        {isMobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -128,6 +130,7 @@ const CustomNavbar = () => {
           >
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               {navLinks.map((link) => {
+                // Check if it's an anchor link (starts with #)
                 const isAnchorLink = link.href.startsWith('#');
 
                 return (
@@ -136,7 +139,7 @@ const CustomNavbar = () => {
                     href={link.href}
                     className="block px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-md"
                     onClick={(e) => {
-                      if (isAnchorLink && isHomePage) {
+                      if (isAnchorLink && location.pathname === '/') {
                         e.preventDefault();
                         const targetElement = document.querySelector(link.href);
                         if (targetElement) {
@@ -145,7 +148,7 @@ const CustomNavbar = () => {
                           });
                         }
                       }
-                      setIsMenuOpen(false);
+                      setIsMobileMenuOpen(false);
                     }}
                   >
                     {link.name}
@@ -154,7 +157,20 @@ const CustomNavbar = () => {
               })}
               <div className="pt-4 pb-3 border-t border-gray-700">
                 <div className="flex flex-col space-y-3 px-3">
-                  <NavbarAuth />
+                  <Link
+                    href="/signin"
+                    className="px-4 py-2 text-gray-300 border border-gray-600 hover:border-gray-400 rounded-lg transition-all duration-200 text-center"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg transition-all duration-200 text-center"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Create Account
+                  </Link>
                 </div>
               </div>
             </div>
@@ -165,4 +181,4 @@ const CustomNavbar = () => {
   );
 };
 
-export default CustomNavbar;
+export default Navbar;
