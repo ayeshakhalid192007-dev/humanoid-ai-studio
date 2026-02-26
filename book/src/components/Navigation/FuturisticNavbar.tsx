@@ -5,6 +5,9 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { useLocation } from '@docusaurus/router';
 import { Button } from '../ui/Button'; // Use unified button component
 import ChatbotWidget from '../ChatbotWidget/FuturisticChatbotWidget';
+import { useAuth } from '../../context/AuthContext';
+import { UserMenu } from '../Auth/UserMenu';
+import BrowserOnly from '@docusaurus/BrowserOnly';
 
 const FuturisticNavbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -106,16 +109,30 @@ const FuturisticNavbar = () => {
             <div className="fm-chatbot-upper-container">
               <ChatbotWidget position="upper" />
             </div>
-            <Link
-              href="/auth/login"
-              className="fm-navbar__link--auth"
-            >
-              Sign In
-            </Link>
+            <BrowserOnly fallback={<div>Loading...</div>}>
+              {() => {
+                const { isAuthenticated, signOut, isLoading } = useAuth();
+
+                if (isAuthenticated) {
+                  return <UserMenu />;
+                }
+
+                return (
+                  <>
+                    <Link
+                      href="/auth/login"
+                      className="fm-navbar__link--auth"
+                    >
+                      Sign In
+                    </Link>
+                    <Button variant="primary" href="/auth/signup">
+                      Create Account
+                    </Button>
+                  </>
+                );
+              }}
+            </BrowserOnly>
           </div>
-          <Button variant="primary" href="/auth/signup">
-            Create Account
-          </Button>
         </div>
 
         {/* Mobile Menu Button */}
@@ -182,17 +199,45 @@ const FuturisticNavbar = () => {
                 );
               })}
               <div className="pt-4 border-t border-fm-text-tertiary/20">
-                <div className="flex flex-col space-y-3">
-                  <Link
-                    href="/auth/login"
-                    className="text-fm-text-secondary hover:text-fm-accent-primary text-center py-2 transition-all duration-200"
-                  >
-                    Sign In
-                  </Link>
-                  <Button variant="primary" href="/auth/signup" className="w-full">
-                    Create Account
-                  </Button>
-                </div>
+                <BrowserOnly fallback={<div>Loading...</div>}>
+                  {() => {
+                    const { isAuthenticated, signOut, user } = useAuth();
+
+                    if (isAuthenticated) {
+                      return (
+                        <div className="flex flex-col space-y-3">
+                          <div className="text-fm-text-secondary text-center py-2">
+                            {user?.name || user?.email}
+                          </div>
+                          <Button
+                            variant="secondary"
+                            onClick={async () => {
+                              await signOut();
+                              setIsMobileMenuOpen(false);
+                            }}
+                            className="w-full"
+                          >
+                            Sign Out
+                          </Button>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="flex flex-col space-y-3">
+                        <Link
+                          href="/auth/login"
+                          className="text-fm-text-secondary hover:text-fm-accent-primary text-center py-2 transition-all duration-200"
+                        >
+                          Sign In
+                        </Link>
+                        <Button variant="primary" href="/auth/signup" className="w-full">
+                          Create Account
+                        </Button>
+                      </div>
+                    );
+                  }}
+                </BrowserOnly>
               </div>
             </div>
           </motion.div>
