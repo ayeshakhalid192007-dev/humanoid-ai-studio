@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { useLocation } from '@docusaurus/router';
-import { Button } from '../ui/FuturisticButton';
+import { Button } from '../ui/Button'; // Use unified button component
+import ChatbotWidget from '../ChatbotWidget/FuturisticChatbotWidget';
 
 const FuturisticNavbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -47,7 +48,8 @@ const FuturisticNavbar = () => {
 
   return (
     <motion.nav
-      className={`fm-navbar ${isScrolled ? 'fm-navbar-scrolled' : ''}`}
+      className={`fm-navbar navbar navbar--fixed-top ${isScrolled ? 'fm-navbar-scrolled' : ''}`}
+      id="navbar"  // Add navbar ID that Docusaurus expects
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
@@ -59,8 +61,8 @@ const FuturisticNavbar = () => {
           <span className="fm-text-tertiary">.io</span>
         </Link>
 
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-8">
+        {/* Desktop Navigation with boxes */}
+        <div className="hidden md:flex items-center gap-2">
           {navLinks.map((link, index) => {
             const isAnchorLink = link.href.startsWith('#');
             const isActiveLink = isActive(link.href);
@@ -69,9 +71,7 @@ const FuturisticNavbar = () => {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`fm-navbar__link transition-all duration-300 ${
-                  isActiveLink ? 'fm-navbar__link--active' : 'hover:fm-text-primary'
-                }`}
+                className={`fm-navbar__link ${isActiveLink ? 'fm-navbar__link--active' : ''}`}
                 onClick={(e) => {
                   if (isAnchorLink && location.pathname === '/') {
                     e.preventDefault();
@@ -100,28 +100,33 @@ const FuturisticNavbar = () => {
           })}
         </div>
 
-        {/* Desktop Auth Buttons */}
-        <div className="hidden md:flex items-center space-x-4">
-          <Link
-            href="/auth/login"
-            className="fm-text-secondary hover:fm-text-primary transition-colors duration-200"
-          >
-            Sign In
-          </Link>
+        {/* Desktop Chatbot and Auth Buttons */}
+        <div className="hidden md:flex fm-navbar__auth-container">
+          <div className="fm-navbar__auth-inner">
+            <div className="fm-chatbot-upper-container">
+              <ChatbotWidget position="upper" />
+            </div>
+            <Link
+              href="/auth/login"
+              className="fm-navbar__link--auth"
+            >
+              Sign In
+            </Link>
+          </div>
           <Button variant="primary" href="/auth/signup">
             Create Account
           </Button>
         </div>
 
         {/* Mobile Menu Button */}
-        <div className="md:hidden">
+        <div className="md:hidden flex items-center">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="fm-text-secondary hover:fm-text-primary focus:outline-none fm-text-2xl"
+            className="fm-text-secondary hover:fm-text-primary focus:outline-none fm-text-2xl transition-all duration-200"
             aria-label="Toggle menu"
           >
             {isMobileMenuOpen ? (
-              <span>✕</span>
+              <span className="fm-text-accent-primary">✕</span>
             ) : (
               <span>☰</span>
             )}
@@ -148,7 +153,7 @@ const FuturisticNavbar = () => {
                   <Link
                     key={link.name}
                     href={link.href}
-                    className={`block py-2 text-fm-text-secondary hover:text-fm-accent-primary hover:fm-bg-tertiary transition-all duration-300 p-2 rounded-md ${isActiveLink ? 'text-fm-accent-primary' : ''}`}
+                    className={`block py-3 text-fm-text-secondary hover:text-fm-accent-primary rounded-lg transition-all duration-200 ${isActiveLink ? 'text-fm-accent-primary' : ''}`}
                     onClick={(e) => {
                       if (isAnchorLink && location.pathname === '/') {
                         e.preventDefault();
@@ -180,7 +185,7 @@ const FuturisticNavbar = () => {
                 <div className="flex flex-col space-y-3">
                   <Link
                     href="/auth/login"
-                    className="text-fm-text-secondary hover:text-fm-accent-primary text-center"
+                    className="text-fm-text-secondary hover:text-fm-accent-primary text-center py-2 transition-all duration-200"
                   >
                     Sign In
                   </Link>

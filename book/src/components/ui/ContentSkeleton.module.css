@@ -1,0 +1,146 @@
+/**
+ * ContentSkeleton Styles
+ *
+ * Animated skeleton loader with glassmorphism effect
+ */
+
+.skeleton {
+  padding: 2rem 0;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.skeletonTitle {
+  height: 2.5rem;
+  width: 60%;
+  margin-bottom: 2rem;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.skeletonHeading {
+  height: 2rem;
+  width: 40%;
+  margin: 2rem 0 1rem 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 6px;
+  backdrop-filter: blur(10px);
+}
+
+.skeletonParagraph {
+  margin-bottom: 1.5rem;
+}
+
+.skeletonLine {
+  height: 1rem;
+  width: 100%;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 4px;
+  backdrop-filter: blur(10px);
+}
+
+.skeletonCodeBlock {
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.skeletonCodeLine {
+  height: 0.875rem;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 3px;
+}
+
+.skeletonCodeLine:last-child {
+  margin-bottom: 0;
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] .skeletonTitle,
+[data-theme='dark'] .skeletonHeading,
+[data-theme='dark'] .skeletonLine,
+[data-theme='dark'] .skeletonCodeLine {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  background-size: 1000px 100%;
+}
+
+[data-theme='dark'] .skeletonCodeBlock {
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Light mode adjustments */
+[data-theme='light'] .skeletonTitle,
+[data-theme='light'] .skeletonHeading,
+[data-theme='light'] .skeletonLine,
+[data-theme='light'] .skeletonCodeLine {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.05) 0%,
+    rgba(0, 0, 0, 0.12) 50%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
+  background-size: 1000px 100%;
+}
+
+[data-theme='light'] .skeletonCodeBlock {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.1);
+}

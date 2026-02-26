@@ -22,14 +22,14 @@ export const Input: React.FC<InputProps> = ({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-300 mb-2">
+        <label className="fm-body-sm text-fm-text-secondary mb-2 block">
           {label}
         </label>
       )}
 
       <div className="relative">
         {leftIcon && (
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-fm-text-tertiary">
             {leftIcon}
           </div>
         )}
@@ -37,28 +37,30 @@ export const Input: React.FC<InputProps> = ({
         <input
           {...props}
           className={`
-            w-full rounded-lg py-3 px-4 bg-white/10 backdrop-blur-sm
-            border ${hasError ? 'border-red-500' : 'border-white/20'}
-            text-white placeholder-gray-400
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+            w-full py-3 px-4 fm-bg-tertiary border
+            ${hasError ? 'border-red-500' : 'border-fm-text-tertiary'}
+            text-fm-text-primary rounded-lg
+            placeholder:text-fm-text-tertiary
+            focus:outline-none focus:ring-2 focus:ring-fm-accent-primary focus:border-transparent
             ${leftIcon ? 'pl-10' : ''} ${rightIcon ? 'pr-10' : ''}
+            transition-all duration-200
             ${className}
           `}
         />
 
         {rightIcon && (
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center text-fm-text-tertiary">
             {rightIcon}
           </div>
         )}
       </div>
 
       {error && (
-        <p className="mt-1 text-sm text-red-400">{error}</p>
+        <p className="mt-2 fm-body-sm text-red-400">{error}</p>
       )}
 
       {!error && helperText && (
-        <p className="mt-1 text-sm text-gray-400">{helperText}</p>
+        <p className="mt-2 fm-body-sm text-fm-text-tertiary">{helperText}</p>
       )}
     </div>
   );

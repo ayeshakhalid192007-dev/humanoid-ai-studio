@@ -344,7 +344,8 @@ import asyncio
 import traceback
 
 # Add request instrumentation
-add_request_instrumentation(app, service_name="physical-ai-backend")
+# Temporarily disabled due to Python 3.14 compatibility issue with OpenTelemetry
+# add_request_instrumentation(app, service_name="physical-ai-backend")
 
 # Include routers
 app.include_router(chat.router, tags=["Chat"])

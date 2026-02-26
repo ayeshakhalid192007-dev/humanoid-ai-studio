@@ -25,7 +25,7 @@ export const Select: React.FC<SelectProps> = ({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-300 mb-2">
+        <label className="fm-body-sm text-fm-text-secondary mb-2 block">
           {label}
         </label>
       )}
@@ -33,11 +33,12 @@ export const Select: React.FC<SelectProps> = ({
       <select
         {...props}
         className={`
-          w-full rounded-lg py-3 px-4 bg-white/10 backdrop-blur-sm
-          border ${hasError ? 'border-red-500' : 'border-white/20'}
-          text-white
-          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+          w-full py-3 px-4 fm-bg-tertiary border
+          ${hasError ? 'border-red-500' : 'border-fm-text-tertiary'}
+          text-fm-text-primary rounded-lg
+          focus:outline-none focus:ring-2 focus:ring-fm-accent-primary focus:border-transparent
           appearance-none
+          transition-all duration-200
           ${className}
         `}
       >
@@ -49,11 +50,11 @@ export const Select: React.FC<SelectProps> = ({
       </select>
 
       {error && (
-        <p className="mt-1 text-sm text-red-400">{error}</p>
+        <p className="mt-2 fm-body-sm text-red-400">{error}</p>
       )}
 
       {!error && helperText && (
-        <p className="mt-1 text-sm text-gray-400">{helperText}</p>
+        <p className="mt-2 fm-body-sm text-fm-text-tertiary">{helperText}</p>
       )}
     </div>
   );

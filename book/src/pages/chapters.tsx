@@ -63,8 +63,16 @@ const ChapterCard: React.FC<ChapterCardProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant={difficulty.toLowerCase() as 'beginner' | 'intermediate' | 'advanced' | 'expert'}
-                   className="text-xs">
+            <Badge
+              variant={
+                (difficulty.toLowerCase() === 'beginner' ||
+                 difficulty.toLowerCase() === 'intermediate' ||
+                 difficulty.toLowerCase() === 'advanced' ||
+                 difficulty.toLowerCase() === 'expert')
+                  ? difficulty.toLowerCase() as 'beginner' | 'intermediate' | 'advanced' | 'expert'
+                  : 'secondary'
+              }
+              className="text-xs">
               {difficulty}
             </Badge>
           </div>

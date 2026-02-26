@@ -11,6 +11,7 @@ import BrowserOnly from "@docusaurus/BrowserOnly";
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
+import ContentSkeleton from "../ui/ContentSkeleton";
 import styles from "./styles.module.css";
 
 function getErrorMessage(err: unknown, action: string): string {
@@ -291,7 +292,9 @@ function ChapterToolbarInner({ chapterSlug, children }: ChapterToolbarProps) {
         dir={isRtl ? "rtl" : undefined}
         lang={isRtl ? "ur" : undefined}
       >
-        {sanitizedHtml ? (
+        {loading ? (
+          <ContentSkeleton type="full" />
+        ) : sanitizedHtml ? (
           <div
             className="markdown"
             dangerouslySetInnerHTML={{ __html: sanitizedHtml }}

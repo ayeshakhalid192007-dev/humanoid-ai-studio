@@ -14,9 +14,21 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 
-// Auth API base URL
-const AUTH_API_URL = "http://localhost:3002";
+// Default auth API URL
+const DEFAULT_AUTH_API_URL = "http://localhost:3002";
+
+// Function to check API health before making requests
+async function checkAuthAPIStatus(authApiUrl: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${authApiUrl}/health`);
+    return response.ok;
+  } catch (error) {
+    console.warn("Auth API not reachable:", error);
+    return false;
+  }
+}
 
 // User type
 export interface User {
@@ -83,6 +95,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Auth Provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { siteConfig } = useDocusaurusContext();
+  const AUTH_API_URL = (siteConfig.customFields?.authApiUrl as string) || DEFAULT_AUTH_API_URL;
+
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -96,6 +111,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshSession = useCallback(async () => {
     try {
       setError(null); // Clear any previous errors
+
+      // Check if API is available first
+      const isAPIAvailable = await checkAuthAPIStatus(AUTH_API_URL);
+      if (!isAPIAvailable) {
+        console.warn("Auth API not available, skipping session refresh");
+        return;
+      }
+
       const response = await fetch(`${AUTH_API_URL}/api/auth/get-session`, {
         method: "GET",
         credentials: "include",
@@ -106,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         const data = await response.json();
-        if (data.user && data.session) {
+        if (data && data.user && data.session) {
           setUser(data.user);
           setSession(data.session);
         } else {
@@ -125,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [AUTH_API_URL]);
 
   // Initialize session on mount
   useEffect(() => {
@@ -136,6 +159,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = useCallback(async () => {
     try {
       setError(null); // Clear any previous errors
+
+      // Check if API is available first
+      const isAPIAvailable = await checkAuthAPIStatus(AUTH_API_URL);
+      if (!isAPIAvailable) {
+        console.warn("Auth API not available, skipping profile fetch");
+        return;
+      }
+
       const response = await fetch(`${AUTH_API_URL}/api/profile`, {
         method: "GET",
         credentials: "include",
@@ -158,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Fetch profile error:", error);
       setError(error instanceof Error ? error.message : "Failed to fetch profile");
     }
-  }, []);
+  }, [AUTH_API_URL]);
 
   // Sign up
   const signUp = async (
@@ -169,6 +200,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setError(null); // Clear any previous errors
       setIsLoading(true);
+
+      // Check if API is available first
+      const isAPIAvailable = await checkAuthAPIStatus(AUTH_API_URL);
+      if (!isAPIAvailable) {
+        throw new Error("Authentication service is currently unavailable. Please try again later.");
+      }
 
       const response = await fetch(`${AUTH_API_URL}/api/auth/sign-up/email`, {
         method: "POST",
@@ -214,7 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(error instanceof Error ? error.message : "Network error. Please try again.");
       return {
         success: false,
-        error: "Network error. Please try again.",
+        error: error instanceof Error ? error.message : "Network error. Please try again.",
       };
     } finally {
       setIsLoading(false);
@@ -231,6 +268,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setError(null); // Clear any previous errors
       setIsLoading(true);
+
+      // Check if API is available first
+      const isAPIAvailable = await checkAuthAPIStatus(AUTH_API_URL);
+      if (!isAPIAvailable) {
+        throw new Error("Authentication service is currently unavailable. Please try again later.");
+      }
 
       // Step 1: Create account
       const signUpResponse = await fetch(
@@ -301,7 +344,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(errorMsg);
       return {
         success: false,
-        error: "Network error. Please try again.",
+        error: error instanceof Error ? error.message : "Network error. Please try again.",
       };
     } finally {
       setIsLoading(false);
@@ -316,6 +359,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setError(null); // Clear any previous errors
       setIsLoading(true);
+
+      // Check if API is available first
+      const isAPIAvailable = await checkAuthAPIStatus(AUTH_API_URL);
+      if (!isAPIAvailable) {
+        throw new Error("Authentication service is currently unavailable. Please try again later.");
+      }
 
       const response = await fetch(`${AUTH_API_URL}/api/auth/sign-in/email`, {
         method: "POST",
@@ -343,7 +392,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(error instanceof Error ? error.message : "Network error. Please try again.");
       return {
         success: false,
-        error: "Network error. Please try again.",
+        error: error instanceof Error ? error.message : "Network error. Please try again.",
       };
     } finally {
       setIsLoading(false);
@@ -356,17 +405,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null); // Clear any previous errors
       setIsLoading(true);
 
-      const response = await fetch(`${AUTH_API_URL}/api/auth/sign-out`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      // Check if API is available first
+      const isAPIAvailable = await checkAuthAPIStatus(AUTH_API_URL);
+      if (isAPIAvailable) {
+        const response = await fetch(`${AUTH_API_URL}/api/auth/sign-out`, {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
 
-      if (!response.ok) {
-        const data = await response.json();
-        setError(data.message || data.error || "Sign out failed");
+        if (!response.ok) {
+          const data = await response.json();
+          setError(data.message || data.error || "Sign out failed");
+        }
       }
     } catch (error) {
       console.error("Sign out error:", error);
@@ -386,6 +439,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setError(null); // Clear any previous errors
       setIsLoading(true);
+
+      // Check if API is available first
+      const isAPIAvailable = await checkAuthAPIStatus(AUTH_API_URL);
+      if (!isAPIAvailable) {
+        throw new Error("Authentication service is currently unavailable. Please try again later.");
+      }
+
       const response = await fetch(`${AUTH_API_URL}/api/profile`, {
         method: "POST",
         credentials: "include",
@@ -414,7 +474,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(errorMsg);
       return {
         success: false,
-        error: "Network error. Please try again.",
+        error: error instanceof Error ? error.message : "Network error. Please try again.",
       };
     } finally {
       setIsLoading(false);

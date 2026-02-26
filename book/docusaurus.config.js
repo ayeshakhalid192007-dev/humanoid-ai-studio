@@ -25,6 +25,7 @@ const config = {
 
   customFields: {
     backendUrl: process.env.BACKEND_URL || 'http://localhost:8000',
+    authApiUrl: process.env.AUTH_API_URL || 'http://localhost:3002',
   },
 
   // Even if you don't use internalization, you can use this field to set useful
@@ -53,6 +54,7 @@ const config = {
             require.resolve('./src/css/custom.css'),
             require.resolve('./src/css/glassmorphism.css'),
             require.resolve('./src/css/futuristic-minimalism.css'),
+            require.resolve('./src/css/neon-brutalism.css'),
           ],
         },
       }),

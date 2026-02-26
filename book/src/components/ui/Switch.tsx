@@ -22,7 +22,7 @@ export const Switch: React.FC<SwitchProps> = ({
   };
 
   return (
-    <div className={`flex items-center ${className}`}>
+    <div className={`fm-flex-align-center ${className}`}>
       <button
         type="button"
         role="switch"
@@ -31,20 +31,20 @@ export const Switch: React.FC<SwitchProps> = ({
         onClick={toggleSwitch}
         className={`
           relative inline-flex h-6 w-11 items-center rounded-full
-          transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-          ${checked ? 'bg-blue-500' : 'bg-white/20'}
+          transition-colors focus:outline-none focus:ring-2 focus:ring-fm-accent-primary focus:ring-offset-2
+          ${checked ? 'bg-fm-accent-primary' : 'bg-fm-bg-tertiary'}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         `}
       >
         <span
           className={`
-            inline-block h-4 w-4 transform rounded-full bg-white transition-transform
+            inline-block h-4 w-4 transform rounded-full bg-fm-text-primary transition-transform
             ${checked ? 'translate-x-6' : 'translate-x-1'}
           `}
         />
       </button>
       {label && (
-        <span className={`ml-3 text-sm ${disabled ? 'text-gray-500' : 'text-gray-300'}`}>
+        <span className={`ml-3 fm-body-sm ${disabled ? 'text-fm-text-tertiary' : 'text-fm-text-secondary'}`}>
           {label}
         </span>
       )}

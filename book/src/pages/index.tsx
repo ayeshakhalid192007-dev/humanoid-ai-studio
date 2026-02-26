@@ -1,487 +1,411 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { Button, Card } from '../components/ui';
+import FuturisticNavbar from '../components/Navigation/FuturisticNavbar';
 
-// Data for the redesigned homepage
-const homepageContent = {
-  hero: {
-    title: "Master Physical AI & Humanoid Robotics",
-    subtitle: "The AI-powered learning platform that guides you through advanced robotics, AI systems, and humanoid development with personalized learning paths.",
-    ctaButtons: {
-      primary: "Get Started",
-      secondary: "Explore Curriculum"
-    }
-  },
-  features: [
-    {
-      icon: "🤖",
-      title: "AI-Powered Tutoring",
-      description: "Personalized guidance tailored to your learning pace and style with real-time feedback"
-    },
-    {
-      icon: "🎮",
-      title: "Simulation Environments",
-      description: "Advanced physics-based simulators for safe practice in robotics and AI development"
-    },
-    {
-      icon: "📚",
-      title: "Structured Curriculum",
-      description: "Comprehensive learning paths from basics to humanoid robotics engineering"
-    },
-    {
-      icon: "🧠",
-      title: "Smart Personalization",
-      description: "Real-time content adjustment powered by AI to match your progress and goals"
-    }
-  ],
-  pillars: [
-    {
-      icon: "👨‍💻",
-      title: "AI Tutor",
-      description: "Personalized learning experience with advanced AI that adapts to your learning style."
-    },
-    {
-      icon: "🧪",
-      title: "Interactive Simulations",
-      description: "State-of-the-art simulators to practice robotics without physical hardware constraints."
-    },
-    {
-      icon: "📋",
-      title: "Structured Curriculum",
-      description: "Carefully designed learning progressions from fundamentals to advanced robotics."
-    },
-    {
-      icon: "🎯",
-      title: "Personalized Chapters",
-      description: "Dynamic content adjustment to match your learning needs and objectives."
-    },
-    {
-      icon: "🌐",
-      title: "Urdu Translation",
-      description: "Complete access to curriculum content in multiple languages for global learners."
-    },
-    {
-      icon: "💬",
-      title: "Intelligent RAG Chatbot",
-      description: "Advanced conversational AI with access to all knowledge resources instantly."
-    }
-  ],
-  curriculum: {
-    items: [
-      {
-        title: "ROS 2 Fundamentals",
-        description: "Deep dive into the Robot Operating System 2 framework for robotics applications."
-      },
-      {
-        title: "Simulation Environments",
-        description: "Advanced simulators that mirror real-world robotics challenges safely."
-      },
-      {
-        title: "NVIDIA Isaac Integration",
-        description: "Hands-on experience with NVIDIA's robotics development platform and AI accelerators."
-      },
-      {
-        title: "Vision-Language-Action Systems",
-        description: "Build robots that perceive, understand, and interact with the physical world."
-      },
-      {
-        title: "Reinforcement Learning",
-        description: "Advanced ML algorithms for robot learning and autonomous decision making."
-      },
-      {
-        title: "Sim-to-Real Transfer",
-        description: "Techniques for applying simulation-knowledge to real robot deployment."
-      },
-      {
-        title: "AI Orchestrator Architecture",
-        description: "Advanced systems for coordinating complex AI capabilities in robotics."
-      },
-      {
-        title: "Reusable Agent Skills",
-        description: "Modular AI capabilities for combining and recombining for different tasks."
-      }
-    ]
-  },
-  testimonials: [
-    {
-      name: 'Sarah Chen',
-      role: 'Robotics Engineer at Boston Dynamics',
-      quote: 'The holistic approach changed how I learn robotics. After completing the curriculum, I advanced significantly in my career. The hands-on projects were transformative.',
-    },
-    {
-      name: 'Marcus Johnson',
-      role: 'AI Research Scientist',
-      quote: 'As an ML professional exploring robotics, this platform perfectly bridged the gap. The Vision-Language-Action module showed me how to connect AI models to real robot actions.',
-    },
-    {
-      name: 'Elena Rodriguez',
-      role: 'Graduate Student, Stanford',
-      quote: 'The AI assistant transforms learning by providing instant explanations with citations. I saved countless hours researching complex concepts and algorithms.',
-    },
-  ],
-  footer: {
-    title: "Master Physical AI & Humanoid Robotics",
-    tagline: "The cutting-edge platform for AI-powered robotics education",
-    copyright: "Physical AI Robotics"
-  }
+// Animated grid background component
+const AnimatedGrid = () => {
+  return (
+    <div className="neon-grid-bg">
+      <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0, 255, 255, 0.1)" strokeWidth="1"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+      </svg>
+    </div>
+  );
 };
 
-const HeroSection = () => {
-  const { hero } = homepageContent;
+// Floating particles effect
+const FloatingParticles = () => {
+  const particles = Array.from({ length: 20 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    delay: Math.random() * 2,
+    duration: 3 + Math.random() * 2,
+  }));
 
   return (
-    <section className="fm-hero">
-      <div className="fm-hero__container relative">
+    <div className="floating-particles">
+      {particles.map((particle) => (
         <motion.div
-          className="fm-animated-element"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1 }}
-        >
-          <h1 className="fm-h1">
-            {hero.title}
-          </h1>
-        </motion.div>
+          key={particle.id}
+          className="particle"
+          style={{
+            left: `${particle.x}%`,
+            top: `${particle.y}%`,
+          }}
+          animate={{
+            y: [0, -30, 0],
+            opacity: [0, 1, 0],
+          }}
+          transition={{
+            duration: particle.duration,
+            repeat: Infinity,
+            delay: particle.delay,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
 
-        <motion.p
-          className="fm-body-xl fm-lead fm-animated-element"
-          initial={{ opacity: 0, y: 30 }}
+// Hero Section with Neon Brutalism
+const HeroSection = () => {
+  const ref = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"]
+  });
+
+  const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+
+  return (
+    <section ref={ref} className="neon-hero">
+      <AnimatedGrid />
+      <FloatingParticles />
+
+      <motion.div
+        className="neon-hero__container"
+        style={{ y, opacity }}
+      >
+        {/* Decorative brutalist shapes */}
+        <div className="brutalist-shapes">
+          <motion.div
+            className="shape shape-1"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          />
+          <motion.div
+            className="shape shape-2"
+            animate={{ rotate: -360 }}
+            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          />
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
+          className="hero-badge"
         >
-          {hero.subtitle}
-        </motion.p>
+          <span className="badge-text">🤖 AI-POWERED LEARNING</span>
+        </motion.div>
 
-        <motion.div
-          className="fm-hero__cta fm-animated-element flex flex-col sm:flex-row items-center gap-4"
-          initial={{ opacity: 0, y: 30 }}
+        <motion.h1
+          className="neon-hero__title"
+          initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
         >
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button variant="primary" size="lg" href="/auth/signup">
-              {hero.ctaButtons.primary}
-            </Button>
-            <Button variant="outline" size="lg" href="/chapters">
-              {hero.ctaButtons.secondary}
-            </Button>
+          <span className="title-line">MASTER</span>
+          <span className="title-line title-line--accent">PHYSICAL AI</span>
+          <span className="title-line">& ROBOTICS</span>
+        </motion.h1>
+
+        <motion.p
+          className="neon-hero__subtitle"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+        >
+          Build humanoid robots with cutting-edge AI. Learn ROS 2, simulation,
+          and vision-language-action systems through personalized, adaptive curriculum.
+        </motion.p>
+
+        <motion.div
+          className="neon-hero__cta"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.7 }}
+        >
+          <Link to="/auth/signup" className="neon-button neon-button--primary">
+            <span className="button-text">START LEARNING</span>
+            <span className="button-arrow">→</span>
+          </Link>
+          <Link to="/chapters" className="neon-button neon-button--outline">
+            <span className="button-text">EXPLORE CURRICULUM</span>
+          </Link>
+        </motion.div>
+
+        <motion.div
+          className="hero-stats"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 1 }}
+        >
+          <div className="stat">
+            <div className="stat-number">8</div>
+            <div className="stat-label">MODULES</div>
           </div>
-          <div className="text-center sm:text-left mt-2 sm:mt-0">
-            <Link to="/auth/login" className="text-fm-accent-primary hover:underline inline-block">
-              Already have an account? Sign in
-            </Link>
+          <div className="stat-divider" />
+          <div className="stat">
+            <div className="stat-number">50+</div>
+            <div className="stat-label">LESSONS</div>
+          </div>
+          <div className="stat-divider" />
+          <div className="stat">
+            <div className="stat-number">AI</div>
+            <div className="stat-label">POWERED</div>
           </div>
         </motion.div>
-      </div>
+      </motion.div>
     </section>
   );
 };
 
+// Features with asymmetric layout
 const FeaturesSection = () => {
-  return (
-    <section id="features" className="fm-section fm-container">
-      <motion.div
-        className="text-center mb-16"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-      >
-        <h2 className="fm-h2">Advanced Learning Experience</h2>
-        <p className="fm-body-lg fm-lead max-w-2xl mx-auto mt-4">
-          Our platform integrates cutting-edge technologies to deliver an unparalleled learning experience that adapts to you.
-        </p>
-      </motion.div>
-
-      <div className="fm-features-grid fm-features-grid--2">
-        {homepageContent.features.map((feature, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: index * 0.1 }}
-            className="fm-feature-card relative overflow-hidden group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="fm-feature-card__icon relative z-10 group-hover:scale-110 transition-transform duration-300">
-              {feature.icon}
-            </div>
-            <h3 className="fm-feature-card__title relative z-10">{feature.title}</h3>
-            <p className="fm-feature-card__description relative z-10">{feature.description}</p>
-          </motion.div>
-        ))}
-      </div>
-    </section>
-  );
-};
-
-const LearningPillars = () => {
-  return (
-    <section id="curriculum" className="fm-section fm-container">
-      <motion.div
-        className="text-center mb-16"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-      >
-        <h2 className="fm-h2">Core Learning Pillars</h2>
-        <p className="fm-body-lg fm-lead max-w-3xl mx-auto mt-4">
-          Six foundational components that will transform your approach to AI and robotics
-        </p>
-      </motion.div>
-
-      <div className="fm-features-grid fm-features-grid--3">
-        {homepageContent.pillars.map((pillar, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: index * 0.1 }}
-          >
-            <Card variant="elevated" hoverEffect={true}>
-              <div className="fm-flex-center">
-                <div className="fm-pillar-card__icon">{pillar.icon}</div>
-              </div>
-              <h3 className="fm-h4 text-center">{pillar.title}</h3>
-              <p className="fm-body-md text-center mt-2">{pillar.description}</p>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
-    </section>
-  );
-};
-
-const CurriculumOverview = () => {
-  return (
-    <section className="fm-section fm-container">
-      <motion.div
-        className="text-center mb-16"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-      >
-        <h2 className="fm-h2">Complete Learning Stack</h2>
-        <p className="fm-body-lg fm-lead max-w-4xl mx-auto mt-4">
-          Comprehensive technology curriculum designed to take you from beginner to advanced robotics practitioner with AI integration.
-        </p>
-      </motion.div>
-
-      <div className="fm-features-grid fm-features-grid--2">
-        {homepageContent.curriculum.items.map((item, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: index * 0.05 }}
-          >
-            <Card variant="solid" hoverEffect={true} className="h-full">
-              <h3 className="fm-h4">{item.title}</h3>
-              <p className="fm-body-md mt-2">{item.description}</p>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
-    </section>
-  );
-};
-
-const TestimonialsSection = () => {
-  return (
-    <section id="testimonials" className="fm-section fm-container">
-      <motion.div
-        className="text-center mb-16"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-      >
-        <h2 className="fm-h2">Student Success Stories</h2>
-        <p className="fm-body-lg fm-lead max-w-3xl mx-auto mt-4">
-          Join hundreds of students and professionals advancing their robotics careers
-        </p>
-      </motion.div>
-
-      <div className="fm-testimonial-grid">
-        {homepageContent.testimonials.map((testimonial, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: index * 0.1 }}
-          >
-            <Card className="h-full">
-              <div className="fm-testimonial-card">
-                <p className="fm-testimonial-text">
-                  "{testimonial.quote}"
-                </p>
-                <div className="fm-testimonial-author">
-                  <span className="fm-testimonial-name">{testimonial.name}</span>
-                  <span className="fm-testimonial-role">{testimonial.role}</span>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
-
-      <motion.div
-        className="text-center mt-12 space-y-4 bg-gradient-to-r from-purple-900/20 to-blue-900/20 p-8 rounded-2xl border border-white/10"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-      >
-        <h3 className="fm-h3 text-white">Ready to start your journey?</h3>
-        <p className="fm-body-lg max-w-md mx-auto text-fm-gray-200">
-          Join our community of robotics and AI pioneers today
-        </p>
-
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-6">
-          <Link
-            to="/auth/signup"
-            className="inline-block"
-          >
-            <Button variant="primary" size="lg" className="shadow-lg">
-              Create Your Account
-            </Button>
-          </Link>
-
-          <div className="text-center">
-            <Link to="/auth/login" className="text-fm-accent-primary hover:underline inline-block">
-              Sign In to Existing Account →
-            </Link>
-          </div>
-        </div>
-      </motion.div>
-    </section>
-  );
-};
-
-const TechnologyStack = () => {
-  const techStack = [
+  const features = [
     {
-      title: "ROS 2 Ecosystem",
-      description: "Leverage the power of Robot Operating System 2 for distributed robotics applications.",
-      icon: "🔄"
+      icon: "🧠",
+      title: "AI TUTOR",
+      description: "Personalized learning that adapts to your pace. Get instant feedback and explanations powered by advanced language models.",
+      color: "cyan"
     },
     {
-      title: "NVIDIA Isaac Sim",
-      description: "High-fidelity simulation environment for testing and training robotic systems.",
-      icon: "🎮"
+      icon: "🎮",
+      title: "SIMULATION",
+      description: "Practice in physics-based environments. Master robotics without hardware constraints using Gazebo and Isaac Sim.",
+      color: "magenta"
     },
     {
-      title: "OpenAI Integration",
-      description: "Advanced language models for natural human-robot interaction and reasoning.",
-      icon: "🧠"
+      icon: "📚",
+      title: "STRUCTURED PATH",
+      description: "From ROS 2 basics to humanoid systems. Follow a carefully designed curriculum that builds expertise progressively.",
+      color: "yellow"
     },
     {
-      title: "Computer Vision",
-      description: "State-of-the-art perception systems for real-world environment understanding.",
-      icon: "👁️"
+      icon: "🌐",
+      title: "MULTILINGUAL",
+      description: "Learn in your language. Full Urdu translation with more languages coming soon for global accessibility.",
+      color: "green"
     }
   ];
 
   return (
-    <section className="fm-section fm-container">
-      <motion.div
-        className="text-center mb-16"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
-      >
-        <h2 className="fm-h2">Advanced Technology Stack</h2>
-        <p className="fm-body-lg fm-lead max-w-3xl mx-auto mt-4">
-          Cutting-edge tools and frameworks that power our robotics and AI education platform
-        </p>
-      </motion.div>
+    <section className="neon-features">
+      <div className="neon-container">
+        <motion.div
+          className="section-header"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 className="section-title">
+            <span className="title-accent">///</span> FEATURES
+          </h2>
+          <p className="section-subtitle">
+            Everything you need to master physical AI and humanoid robotics
+          </p>
+        </motion.div>
 
-      <div className="fm-features-grid fm-features-grid--2">
-        {techStack.map((tech, index) => (
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: index * 0.1 }}
-          >
-            <Card variant="glass-3xl" hoverEffect={true} glowEffect={true}>
-              <div className="fm-flex-center mb-4">
-                <div className="text-3xl">{tech.icon}</div>
-              </div>
-              <h3 className="fm-h4 text-center">{tech.title}</h3>
-              <p className="fm-body-md text-center mt-2">{tech.description}</p>
-            </Card>
-          </motion.div>
-        ))}
+        <div className="features-grid">
+          {features.map((feature, index) => (
+            <motion.div
+              key={index}
+              className={`feature-card feature-card--${feature.color}`}
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: index * 0.1 }}
+              whileHover={{ y: -8, transition: { duration: 0.2 } }}
+            >
+              <div className="feature-icon">{feature.icon}</div>
+              <h3 className="feature-title">{feature.title}</h3>
+              <p className="feature-description">{feature.description}</p>
+              <div className="feature-corner" />
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );
 };
 
-const Footer = () => {
-  const { footer } = homepageContent;
+// Curriculum with bold typography
+const CurriculumSection = () => {
+  const modules = [
+    { num: "01", title: "ROS 2 FUNDAMENTALS", topics: "Nodes • Topics • Services • Actions" },
+    { num: "02", title: "SIMULATION ENVIRONMENTS", topics: "Gazebo • URDF • Physics • Sensors" },
+    { num: "03", title: "COMPUTER VISION", topics: "Perception • Object Detection • Tracking" },
+    { num: "04", title: "VOICE-TO-ACTION", topics: "NLP • Speech • Command Execution" },
+    { num: "05", title: "NVIDIA ISAAC", topics: "GPU Acceleration • Isaac Sim • Omniverse" },
+    { num: "06", title: "VLA SYSTEMS", topics: "Vision • Language • Action Integration" },
+    { num: "07", title: "REINFORCEMENT LEARNING", topics: "Policy Learning • Reward Design • Training" },
+    { num: "08", title: "SIM-TO-REAL", topics: "Domain Transfer • Deployment • Testing" }
+  ];
 
   return (
-    <footer className="fm-footer">
-      <div className="fm-footer__container">
-        <div className="fm-flex-between">
-          <div>
-            <h3 className="fm-footer__section-title">
-              {footer.title}
-            </h3>
-            <p className="fm-body-sm">{footer.tagline}</p>
-          </div>
-          <div className="fm-footer__copyright">
-            © {new Date().getFullYear()} {footer.copyright}. All rights reserved.
-          </div>
+    <section className="neon-curriculum">
+      <div className="neon-container">
+        <motion.div
+          className="section-header"
+          initial={{ opacity: 0, x: -50 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 className="section-title section-title--large">
+            COMPLETE<br />
+            <span className="title-accent">CURRICULUM</span>
+          </h2>
+        </motion.div>
+
+        <div className="curriculum-list">
+          {modules.map((module, index) => (
+            <motion.div
+              key={index}
+              className="curriculum-item"
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.05 }}
+              whileHover={{ x: 10, transition: { duration: 0.2 } }}
+            >
+              <div className="curriculum-number">{module.num}</div>
+              <div className="curriculum-content">
+                <h3 className="curriculum-title">{module.title}</h3>
+                <p className="curriculum-topics">{module.topics}</p>
+              </div>
+              <div className="curriculum-arrow">→</div>
+            </motion.div>
+          ))}
         </div>
       </div>
-    </footer>
+    </section>
   );
 };
 
-// Add a special sign-in CTA section
-const SignInCTA = () => {
+// Tech stack with neon cards
+const TechStackSection = () => {
+  const technologies = [
+    { name: "ROS 2", desc: "Robot Operating System", icon: "🔄" },
+    { name: "GAZEBO", desc: "Physics Simulation", icon: "🎮" },
+    { name: "NVIDIA ISAAC", desc: "GPU-Accelerated Robotics", icon: "⚡" },
+    { name: "OPENAI", desc: "Language Models", icon: "🧠" },
+    { name: "PYTHON", desc: "Primary Language", icon: "🐍" },
+    { name: "PYTORCH", desc: "Deep Learning", icon: "🔥" }
+  ];
+
   return (
-    <section className="fm-section bg-gradient-to-r from-blue-900/30 to-purple-900/30 border-y border-white/10 py-16">
-      <div className="fm-container text-center">
+    <section className="neon-tech">
+      <div className="neon-container">
         <motion.div
+          className="section-header section-header--center"
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="max-w-3xl mx-auto"
         >
-          <h2 className="fm-h2 text-white mb-4">Ready to Transform Your Learning?</h2>
-          <p className="fm-body-lg text-fm-gray-200 mb-8 max-w-2xl mx-auto">
-            Sign in to access personalized curriculum, track your progress, and engage with our AI-powered learning assistant.
+          <h2 className="section-title">
+            <span className="title-accent">///</span> TECH STACK
+          </h2>
+        </motion.div>
+
+        <div className="tech-grid">
+          {technologies.map((tech, index) => (
+            <motion.div
+              key={index}
+              className="tech-card"
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: index * 0.1 }}
+              whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
+            >
+              <div className="tech-icon">{tech.icon}</div>
+              <div className="tech-name">{tech.name}</div>
+              <div className="tech-desc">{tech.desc}</div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// CTA Section with dramatic styling
+const CTASection = () => {
+  return (
+    <section className="neon-cta">
+      <div className="neon-container">
+        <motion.div
+          className="cta-content"
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+        >
+          <div className="cta-shapes">
+            <div className="cta-shape cta-shape-1" />
+            <div className="cta-shape cta-shape-2" />
+          </div>
+
+          <h2 className="cta-title">
+            READY TO BUILD<br />
+            <span className="title-accent">THE FUTURE?</span>
+          </h2>
+
+          <p className="cta-subtitle">
+            Join hundreds of students mastering physical AI and humanoid robotics
           </p>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link to="/auth/signup">
-              <Button variant="primary" size="lg" className="shadow-lg">
-                Create Free Account
-              </Button>
+          <div className="cta-buttons">
+            <Link to="/auth/signup" className="neon-button neon-button--primary neon-button--large">
+              <span className="button-text">CREATE FREE ACCOUNT</span>
+              <span className="button-arrow">→</span>
             </Link>
-            <Link to="/auth/login">
-              <Button variant="secondary" size="lg">
-                Already Have an Account? Sign In
-              </Button>
+            <Link to="/auth/login" className="neon-button neon-button--outline neon-button--large">
+              <span className="button-text">SIGN IN</span>
             </Link>
+          </div>
+
+          <div className="cta-note">
+            No credit card required • Start learning immediately
           </div>
         </motion.div>
       </div>
     </section>
+  );
+};
+
+// Footer with minimalist design
+const Footer = () => {
+  return (
+    <footer className="neon-footer">
+      <div className="neon-container">
+        <div className="footer-content">
+          <div className="footer-brand">
+            <div className="footer-logo">PHYSICAL AI</div>
+            <div className="footer-tagline">Master robotics with AI-powered learning</div>
+          </div>
+
+          <div className="footer-links">
+            <Link to="/chapters" className="footer-link">Curriculum</Link>
+            <Link to="/auth/signup" className="footer-link">Sign Up</Link>
+            <Link to="/auth/login" className="footer-link">Login</Link>
+          </div>
+        </div>
+
+        <div className="footer-bottom">
+          <div className="footer-copyright">
+            © {new Date().getFullYear()} Physical AI Platform
+          </div>
+          <div className="footer-tech">
+            Built with React • Docusaurus • FastAPI
+          </div>
+        </div>
+      </div>
+    </footer>
   );
 };
 
@@ -490,18 +414,14 @@ export default function Home(): JSX.Element {
   const { siteConfig } = useDocusaurusContext();
 
   return (
-    <>
+    <div className="neon-brutalism-page">
+      <FuturisticNavbar />
       <HeroSection />
       <FeaturesSection />
-      <div className="fm-gradient-line"></div>
-      <LearningPillars />
-      <div className="fm-gradient-line"></div>
-      <CurriculumOverview />
-      <div className="fm-gradient-line"></div>
-      <SignInCTA />
-      <div className="fm-gradient-line"></div>
-      <TestimonialsSection />
+      <CurriculumSection />
+      <TechStackSection />
+      <CTASection />
       <Footer />
-    </>
+    </div>
   );
 }

@@ -35,7 +35,12 @@ const BACKEND_URL = 'http://localhost:8000';
 const SESSION_STORAGE_KEY = 'chatbot_conversation';
 const SESSION_ID_KEY = 'chatbot_session_id';
 
-export default function FuturisticChatbotWidget(): JSX.Element {
+// Add position prop to allow upper placement
+interface FuturisticChatbotWidgetProps {
+  position?: 'floating' | 'upper';
+}
+
+export default function FuturisticChatbotWidget({ position = 'floating' }: FuturisticChatbotWidgetProps = {}): JSX.Element {
   const { isAuthenticated } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -178,42 +183,167 @@ export default function FuturisticChatbotWidget(): JSX.Element {
   };
 
   if (!isAuthenticated) {
-    return (
-      <>
-        <button
-          className="fm-chatbot-icon fm-chatbot-icon--locked"
-          onClick={() => setShowAuthModal(true)}
-          aria-label="Login to access chatbot"
-          title="Login to access the AI assistant"
-        >
-          <span>💬</span>
-          <span className="fm-chatbot-icon-lock">🔒</span>
-        </button>
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => setShowAuthModal(false)}
-        />
-      </>
-    );
+    if (position === 'upper') {
+      return (
+        <div className="fm-chatbot-upper-container">
+          <button
+            className="fm-chatbot-icon fm-chatbot-icon--locked"
+            onClick={() => setShowAuthModal(true)}
+            aria-label="Login to access chatbot"
+            title="Login to access the AI assistant"
+          >
+            <span>💬</span>
+            <span className="fm-chatbot-icon-lock">🔒</span>
+          </button>
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+          />
+        </div>
+      );
+    } else {
+      return (
+        <>
+          <button
+            className="fm-chatbot-icon fm-chatbot-icon--locked"
+            onClick={() => setShowAuthModal(true)}
+            aria-label="Login to access chatbot"
+            title="Login to access the AI assistant"
+          >
+            <span>💬</span>
+            <span className="fm-chatbot-icon-lock">🔒</span>
+          </button>
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+          />
+        </>
+      );
+    }
   }
 
   if (!isExpanded) {
-    return (
-      <button
-        className="fm-chatbot-icon"
-        onClick={() => setIsExpanded(true)}
-        aria-label="Open chatbot"
-        title="Ask questions about the curriculum"
-      >
-        💬
-      </button>
-    );
+    if (position === 'upper') {
+      return (
+        <div className="fm-chatbot-upper-container">
+          <button
+            className="fm-chatbot-icon"
+            onClick={() => setIsExpanded(true)}
+            aria-label="Open chatbot"
+            title="Ask questions about the curriculum"
+          >
+            💬
+          </button>
+        </div>
+      );
+    } else {
+      return (
+        <button
+          className="fm-chatbot-icon"
+          onClick={() => setIsExpanded(true)}
+          aria-label="Open chatbot"
+          title="Ask questions about the curriculum"
+        >
+          💬
+        </button>
+      );
+    }
   }
 
   // Handle suggested question selection
   const handleSuggestedQuestion = (question: string) => {
     setInputValue(question);
   };
+
+  if (position === 'upper') {
+    return (
+      <div className="fm-chatbot fm-chatbot--upper" role="dialog" aria-label="Curriculum chatbot">
+        <div className="fm-chatbot__header">
+          <span>AI Assistant</span>
+          <button
+            onClick={() => setIsExpanded(false)}
+            aria-label="Close chatbot"
+            className="fm-chatbot__close-button"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="fm-chatbot__messages">
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`fm-chatbot__message fm-chatbot__message--${msg.role}`}>
+              <div className="fm-chatbot__message-content">
+                {msg.content}
+                {msg.role === 'assistant' && (
+                  <button
+                    onClick={() => copyToClipboard(msg.content)}
+                    className="fm-chatbot__copy-button"
+                    title="Copy to clipboard"
+                    aria-label="Copy message"
+                  >
+                    📋
+                  </button>
+                )}
+              </div>
+
+              {msg.citations && msg.citations.length > 0 && (
+                <div className="fm-chatbot__citations">
+                  <strong>Sources:</strong>
+                  {msg.citations.map((citation, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleCitationClick(citation.url)}
+                      className="fm-chatbot__citation-link"
+                    >
+                      Module {citation.module}: {citation.section}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+
+          {isLoading && (
+            <div className="fm-chatbot__message fm-chatbot__message--bot">
+              <div className="fm-chatbot__typing-indicator">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="fm-chatbot__error">
+              {error}
+              <button onClick={() => setError(null)}>Dismiss</button>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        <form onSubmit={handleSubmit} className="fm-chatbot__input">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder="Ask about the curriculum..."
+            maxLength={500}
+            disabled={isLoading}
+            aria-label="Chat input"
+            className="fm-chatbot__input-field"
+          />
+          <button
+            type="submit"
+            disabled={isLoading || !inputValue.trim()}
+            aria-label="Send message"
+            className="fm-chatbot__send-button"
+          >
+            ➤
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="fm-chatbot" role="dialog" aria-label="Curriculum chatbot">

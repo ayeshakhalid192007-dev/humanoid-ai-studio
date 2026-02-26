@@ -59,7 +59,7 @@ export const Modal: React.FC<ModalProps> = ({
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 z-50 fm-flex-center p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -71,10 +71,11 @@ export const Modal: React.FC<ModalProps> = ({
 
         <motion.div
           className={`
-            relative glass-card-3xl rounded-2xl
+            relative fm-card rounded-lg
             ${sizeClasses[size]}
             max-h-[90vh]
             overflow-y-auto
+            fm-p-6
           `}
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -82,14 +83,14 @@ export const Modal: React.FC<ModalProps> = ({
           transition={{ type: 'spring', damping: 25, stiffness: 400 }}
         >
           {(title || onClose) && (
-            <div className="flex items-center justify-between p-6 border-b border-white/10">
+            <div className="fm-flex-between border-b border-fm-text-tertiary fm-pb-4 mb-4">
               {title && (
-                <h2 className="text-xl font-semibold text-white">{title}</h2>
+                <h2 className="fm-h4 text-fm-text-primary">{title}</h2>
               )}
               {onClose && (
                 <button
                   onClick={onClose}
-                  className="text-gray-400 hover:text-white transition-colors"
+                  className="text-fm-text-secondary hover:text-fm-text-primary transition-colors"
                   aria-label="Close"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,7 +101,7 @@ export const Modal: React.FC<ModalProps> = ({
             </div>
           )}
 
-          <div className="p-6">
+          <div className="fm-py-2">
             {children}
           </div>
         </motion.div>

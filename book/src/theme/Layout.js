@@ -130,18 +130,21 @@ export default function Layout(props) {
     );
   }
 
-  const layoutContent = (
-    <FuturisticContainer>
-      <StaggeredContent delay={0.1}>
-        {children}
-      </StaggeredContent>
-    </FuturisticContainer>
-  );
-
   return (
     <OriginalLayout {...layoutProps}>
-      <AnimatedBackground />
-      {layoutContent}
+      {/* Add our animated background as an overlay without interfering with Docusaurus layout */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: -50,
+        pointerEvents: 'none'
+      }}>
+        <AnimatedBackground />
+      </div>
+      {children}
     </OriginalLayout>
   );
 }

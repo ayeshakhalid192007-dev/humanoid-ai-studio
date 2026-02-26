@@ -6,7 +6,7 @@
  * Enhanced with glassmorphism styling and animations.
  */
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Content from "@theme-original/DocItem/Content";
 import type ContentType from "@theme/DocItem/Content";
 import type { WrapperProps } from "@docusaurus/types";
@@ -49,9 +49,36 @@ function ChapterToolbarWrapper({
   );
 }
 
+function ContentWithLoading({ children }: { children: React.ReactNode }) {
+  const [isContentReady, setIsContentReady] = useState(false);
+  const ContentSkeleton = require("../../../components/ui/ContentSkeleton").default;
+  const { useLocation } = require("@docusaurus/router") as typeof import("@docusaurus/router");
+  const location = useLocation();
+
+  useEffect(() => {
+    // Show skeleton on route change
+    setIsContentReady(false);
+
+    // Small delay to ensure content is fully rendered
+    const timer = setTimeout(() => {
+      setIsContentReady(true);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [location.pathname]); // Re-run when route changes
+
+  if (!isContentReady) {
+    return <ContentSkeleton type="full" />;
+  }
+
+  return <>{children}</>;
+}
+
 export default function ContentWrapper(props: Props): JSX.Element {
+  const ContentSkeleton = require("../../../components/ui/ContentSkeleton").default;
+
   return (
-    <BrowserOnly fallback={<Content {...props} />}>
+    <BrowserOnly fallback={<ContentSkeleton type="full" />}>
       {() => (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -59,9 +86,11 @@ export default function ContentWrapper(props: Props): JSX.Element {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="glass-card doc-content"
         >
-          <ChapterToolbarWrapper>
-            <Content {...props} />
-          </ChapterToolbarWrapper>
+          <ContentWithLoading>
+            <ChapterToolbarWrapper>
+              <Content {...props} />
+            </ChapterToolbarWrapper>
+          </ContentWithLoading>
         </motion.div>
       )}
     </BrowserOnly>

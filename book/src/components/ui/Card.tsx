@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 interface CardProps {
   children: React.ReactNode;
   className?: string;
-  variant?: 'default' | 'glass' | 'glass-3xl' | 'elevated' | 'solid';
+  variant?: 'default' | 'glass' | 'glass-3xl' | 'elevated' | 'solid' | 'accent';
   hoverEffect?: boolean;
   glowEffect?: boolean;
 }
@@ -12,32 +12,29 @@ interface CardProps {
 export const Card: React.FC<CardProps> = ({
   children,
   className = '',
-  variant = 'glass',
+  variant = 'default',
   hoverEffect = true,
   glowEffect = false,
 }) => {
-  const baseClasses = 'rounded-2xl shadow-xl transition-all duration-300 overflow-hidden';
+  const baseClasses = 'fm-card transition-all duration-300 overflow-hidden';
 
   const variantClasses = {
-    default: 'bg-white/10',
-    glass: 'glass-card bg-white/10 backdrop-blur-sm border border-white/20',
-    'glass-3xl': 'glass-card-3xl bg-white/10 backdrop-blur-3xl border border-white/20 rounded-3xl',
-    elevated: 'bg-white/10 backdrop-blur-sm border border-white/20 shadow-2xl rounded-2xl',
-    solid: 'bg-white/20 border border-white/30 shadow-lg rounded-2xl'
+    default: 'fm-card',
+    glass: 'fm-card--glass',
+    'glass-3xl': 'fm-card--glass',
+    elevated: 'fm-card--elevated',
+    solid: 'fm-card--solid',
+    accent: 'fm-card--accent'
   }[variant];
 
-  const hoverClasses = hoverEffect
-    ? 'hover:translate-y-[-8px] hover:scale-[1.04] hover:shadow-2xl hover:border-white/30'
-    : '';
+  const hoverClasses = hoverEffect ? 'fm-hover-lift' : '';
 
-  const glowClasses = glowEffect
-    ? 'relative glow-border hover:glow-border'
-    : '';
+  const glowClasses = glowEffect ? 'fm-hover-glow' : '';
 
   return (
     <motion.div
       className={`${baseClasses} ${variantClasses} ${hoverClasses} ${glowClasses} ${className}`}
-      whileHover={hoverEffect ? { y: -8, scale: 1.04 } : undefined}
+      whileHover={hoverEffect ? { y: -4 } : undefined}
       whileTap={{ scale: 0.98 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >

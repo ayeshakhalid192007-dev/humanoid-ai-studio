@@ -3,17 +3,17 @@ import asyncio
 import time
 from typing import Any, Dict, Optional, Callable
 from openai import AsyncOpenAI
-from .utils.circuit_breaker import CircuitBreaker
-from ..utils.logging import Logger
+from ..utils.circuit_breaker import CircuitBreaker
+from ..utils.logger import get_logger
 
 
 class BaseAIClient:
     """Base class for AI clients with common functionality."""
 
-    def __init__(self, client: AsyncOpenAI, model: str = "gpt-4o-mini", logger: Logger = None):
+    def __init__(self, client: AsyncOpenAI, model: str = "gpt-4o-mini", logger = None):
         self.client = client
         self.model = model
-        self.logger = logger or Logger()
+        self.logger = logger or get_logger(__name__)
         self.circuit_breaker = CircuitBreaker(failure_threshold=5, recovery_timeout=30)
 
     async def _execute_with_circuit_breaker(self, func: Callable, *args, **kwargs):
@@ -27,7 +27,7 @@ class BaseAIClient:
 class OpenAIClient(BaseAIClient):
     """OpenAI client with enhanced functionality."""
 
-    def __init__(self, client: AsyncOpenAI, model: str = "gpt-4o-mini", logger: Logger = None):
+    def __init__(self, client: AsyncOpenAI, model: str = "gpt-4o-mini", logger = None):
         super().__init__(client, model, logger)
         self._cache = {}  # Simple in-memory cache
 
@@ -107,7 +107,7 @@ class AIClientFactory:
         self._clients = {}
         self.api_key = api_key
         self.base_url = base_url
-        self.logger = Logger()
+        self.logger = get_logger(__name__)
 
     def create_openai_client(self, model: str = "gpt-4o-mini", api_key: Optional[str] = None) -> OpenAIClient:
         """Create an OpenAI client instance."""
