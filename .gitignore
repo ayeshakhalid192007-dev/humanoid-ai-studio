@@ -70,3 +70,14 @@ book/build/
 auth-server/node_modules/
 backend/venv/
 backend/__pycache__/
+
+# Temporary files
+nul
+cookies.txt
+*.tmp
+
+# MCP and local tools
+.playwright-mcp/
+
+# Runtime reports
+runtime-guard-report.md
