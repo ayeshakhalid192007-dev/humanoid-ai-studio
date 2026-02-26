@@ -12,13 +12,13 @@ const config = {
   favicon: 'img/favicon.ico',
 
   // Set the production url of your site here
-  url: 'https://yourusername.github.io', // TODO: Replace with your GitHub username
-  baseUrl: '/', // Adjusted for local development
+  url: 'https://ayeshakhalid192007-dev.github.io',
+  baseUrl: '/humanoid-ai-studio/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'yourusername', // TODO: Replace with your GitHub username
-  projectName: '', // Adjusted for local development - empty string for default baseUrl '/'
+  organizationName: 'ayeshakhalid192007-dev',
+  projectName: 'humanoid-ai-studio',
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
@@ -46,7 +46,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/yourusername/physical_ai/tree/main/book/', // TODO: Replace
+            'https://github.com/ayeshakhalid192007-dev/humanoid-ai-studio/tree/main/book/',
         },
         blog: false, // Disable blog for now
         theme: {
@@ -74,7 +74,7 @@ const config = {
         },
         items: [
           {
-            href: 'https://github.com/yourusername/physical_ai', // TODO: Replace
+            href: 'https://github.com/ayeshakhalid192007-dev/humanoid-ai-studio',
             label: 'GitHub',
             position: 'right',
           },
@@ -128,11 +128,11 @@ const config = {
             items: [
               {
                 label: 'GitHub',
-                href: 'https://github.com/yourusername/physical_ai', // TODO: Replace
+                href: 'https://github.com/ayeshakhalid192007-dev/humanoid-ai-studio',
               },
               {
                 label: 'Issues',
-                href: 'https://github.com/yourusername/physical_ai/issues', // TODO: Replace
+                href: 'https://github.com/ayeshakhalid192007-dev/humanoid-ai-studio/issues',
               },
             ],
           },
