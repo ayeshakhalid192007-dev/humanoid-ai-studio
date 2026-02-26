@@ -1,0 +1,45 @@
+# Recommendation Matrix Template
+
+This is a placeholder for the recommendation matrix template file.
+
+## Structure of the Recommendation Matrix
+
+The recommendation matrix is an Excel file that helps prioritize code analysis findings based on:
+
+### Input Columns:
+- Finding ID
+- Description
+- Category (Security, Performance, Maintainability, etc.)
+- Severity (Critical, High, Medium, Low)
+- Estimated Effort (S, M, L, XL)
+- Estimated Impact (High, Medium, Low)
+- Confidence Level (%)
+- Related Components
+- Dependencies
+
+### Calculated Columns:
+- Priority Score (based on severity, impact, and effort)
+- Risk Level (based on severity and probability)
+- ROI Score (impact vs effort ratio)
+- Timeline Estimate
+
+### Output Views:
+- Prioritized list of recommendations
+- Effort vs. impact chart
+- Risk heat map
+- Timeline planning view
+
+## Usage Instructions
+
+1. Fill in the findings from the code analysis
+2. The matrix automatically calculates priority scores
+3. Sort by priority score to identify highest-value improvements
+4. Use the timeline planning view to schedule work
+5. Adjust weights based on project priorities
+
+## Filtering Options
+
+- Filter by category (Security, Performance, etc.)
+- Filter by effort level
+- Filter by risk level
+- Custom priority ranges
