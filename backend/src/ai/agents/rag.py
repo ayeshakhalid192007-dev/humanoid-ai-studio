@@ -11,6 +11,7 @@ from ...db.neon_client import NeonClient, get_neon_client
 from ...config import get_settings
 import hashlib
 from ..clients import get_openai_client
+from ..gemini_client import get_gemini_client
 
 
 class RAGReasoningAgent(BaseAgent):
@@ -90,10 +91,9 @@ class RAGReasoningAgent(BaseAgent):
 
         # Get AI client and make the API call
         try:
-            client = await get_openai_client(self.model)
+            client = await get_openai_client(self.settings.OPENAI_CHAT_MODEL or self.model)
             response = await client.chat_completion(
                 messages=messages,
-                model=self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else self.model,
                 temperature=temperature,
                 max_tokens=max_tokens,
             )
@@ -187,11 +187,7 @@ class RAGReasoningAgent(BaseAgent):
                 temperature = template.temperature
                 max_tokens = template.max_tokens
 
-        # For streaming, we'll call the regular OpenAI client directly but could update later
-        import openai
-        from openai import AsyncOpenAI
-
-        client = AsyncOpenAI(api_key=self.settings.OPENAI_API_KEY or openai.api_key)
+        client = get_gemini_client()
         try:
             stream = await client.chat.completions.create(
                 model=self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else self.model,
