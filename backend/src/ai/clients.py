@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional, Callable
 from openai import AsyncOpenAI
 from ..utils.circuit_breaker import CircuitBreaker
 from ..utils.logger import get_logger
+from ..config import get_settings
 
 
 class BaseAIClient:
@@ -145,27 +146,27 @@ class AIClientFactory:
         self._clients.clear()
 
     def _get_api_key_from_env(self) -> Optional[str]:
-        """Get API key from environment variables."""
+        """Get Gemini API key from environment variables."""
         import os
-        return os.getenv("OPENAI_API_KEY")
+        return os.getenv("GEMINI_API_KEY")
 
 
 # Global factory instance for singleton access
 _factory_instance: Optional[AIClientFactory] = None
 
-
 async def get_ai_client_factory() -> AIClientFactory:
-    """Get the global AI client factory instance."""
+    """Get the global AI client factory instance (Gemini-backed)."""
     global _factory_instance
     if _factory_instance is None:
-        import os
-        api_key = os.getenv("OPENAI_API_KEY")
-        base_url = os.getenv("OPENAI_BASE_URL")
-        _factory_instance = AIClientFactory(api_key=api_key, base_url=base_url)
+        settings = get_settings()
+        _factory_instance = AIClientFactory(
+            api_key=settings.GEMINI_API_KEY,
+            base_url=settings.GEMINI_BASE_URL,
+        )
     return _factory_instance
 
 
-async def get_openai_client(model: str = "gpt-4o-mini") -> OpenAIClient:
-    """Get an OpenAI client instance."""
+async def get_openai_client(model: str = "gemini-2.0-flash") -> OpenAIClient:
+    """Get a Gemini-backed client instance (OpenAI-compatible interface)."""
     factory = await get_ai_client_factory()
     return factory.get_or_create_client("openai", model)
