@@ -1,10 +1,18 @@
+# ============================================================
+# Python >= 3.10 required (Pydantic V2, asyncpg 0.29+, async patterns)
+# ============================================================
+
 # Web Framework
 fastapi>=0.100.0
 uvicorn[standard]>=0.23.0
 python-multipart>=0.0.6
 
-# OpenAI & LLM
+# LLM — openai library used with Gemini-compatible API (no OpenAI key needed)
 openai>=1.0.0
+
+# Local Embeddings — sentence-transformers (free, no API key, runs locally)
+# Model all-MiniLM-L6-v2 downloads ~80MB from HuggingFace on first use
+sentence-transformers>=3.0.0
 
 # Vector Database
 qdrant-client>=1.7.0
