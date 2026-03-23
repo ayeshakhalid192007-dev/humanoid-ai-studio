@@ -11,7 +11,9 @@
     "db:profiles": "node scripts/create-profiles-table.js",
     "db:migrate-users": "node scripts/migrate-to-better-auth.js",
     "db:migrate-freetext": "node scripts/migrate-profiles-freetext.js",
-    "db:fix-schema": "node scripts/fix-schema.js"
+    "db:fix-schema": "node scripts/fix-schema.js",
+    "db:migrate-oidc": "node scripts/migrate-oidc.js",
+    "db:seed-client": "node scripts/seed-public-client.js"
   },
   "dependencies": {
     "better-auth": "^1.2.0",
@@ -25,7 +27,7 @@
   "devDependencies": {
     "@better-auth/cli": "^1.2.0",
     "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
+    "@types/express": "^4.17.21",
     "@types/node": "^22.0.0"
   },
   "engines": {
