@@ -154,6 +154,7 @@ class AIClientFactory:
 # Global factory instance for singleton access
 _factory_instance: Optional[AIClientFactory] = None
 
+
 async def get_ai_client_factory() -> AIClientFactory:
     """Get the global AI client factory instance (Gemini-backed)."""
     global _factory_instance
