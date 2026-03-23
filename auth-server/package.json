@@ -11,9 +11,7 @@
     "db:profiles": "node scripts/create-profiles-table.js",
     "db:migrate-users": "node scripts/migrate-to-better-auth.js",
     "db:migrate-freetext": "node scripts/migrate-profiles-freetext.js",
-    "db:fix-schema": "node scripts/fix-schema.js",
-    "db:migrate-oidc": "node scripts/migrate-oidc.js",
-    "db:seed-client": "node scripts/seed-public-client.js"
+    "db:fix-schema": "node scripts/fix-schema.js"
   },
   "dependencies": {
     "better-auth": "^1.2.0",
