@@ -12,6 +12,7 @@ from ...config import get_settings
 import hashlib
 from ..clients import get_openai_client
 from ..gemini_client import get_gemini_client
+from google.genai import types as genai_types
 
 
 class RAGReasoningAgent(BaseAgent):
@@ -189,18 +190,38 @@ class RAGReasoningAgent(BaseAgent):
 
         client = get_gemini_client()
         try:
-            stream = await client.chat.completions.create(
-                model=self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else self.model,
-                messages=messages,
+            # Build google-genai contents from messages list
+            system_instruction = ""
+            contents = []
+            for msg in messages:
+                if msg["role"] == "system":
+                    system_instruction = msg["content"]
+                elif msg["role"] == "user":
+                    contents.append(genai_types.Content(
+                        role="user",
+                        parts=[genai_types.Part(text=msg["content"])]
+                    ))
+                elif msg["role"] == "assistant":
+                    contents.append(genai_types.Content(
+                        role="model",
+                        parts=[genai_types.Part(text=msg["content"])]
+                    ))
+
+            stream_config = genai_types.GenerateContentConfig(
                 temperature=temperature,
-                max_tokens=max_tokens,
-                stream=True
+                max_output_tokens=max_tokens,
+                system_instruction=system_instruction or None,
             )
 
-            async for chunk in stream:
-                content = chunk.choices[0].delta.content
-                if content:
-                    yield content
+            model_name = self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else self.model
+            async for chunk in await client.aio.models.generate_content_stream(
+                model=model_name,
+                contents=contents,
+                config=stream_config,
+            ):
+                text = chunk.text or ""
+                if text:
+                    yield text
         except Exception as e:
             # Handle API errors gracefully
             yield f"Error: {str(e)}"
