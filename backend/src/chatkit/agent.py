@@ -1,11 +1,10 @@
 """
 ChatKit Agent - Conversational RAG Orchestration
 
-Manages conversation state, tool calling, and response generation
-using OpenAI's chat completions API with function calling.
+Uses native google-genai SDK for Gemini chat, streaming, and function calling.
 
 Author: Physical AI Platform Team
-Date: 2026-02-12
+Date: 2026-03-24
 """
 
 from typing import List, Dict, Any, Optional, AsyncIterator
@@ -13,6 +12,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import json
 import uuid
+
+from google.genai import types as genai_types
 
 from .tools import RAGTools, RetrievalResult
 from ..config import get_settings
@@ -28,7 +29,7 @@ class ConversationMessage:
     role: str  # "system", "user", "assistant", "tool"
     content: str
     name: Optional[str] = None  # For tool messages
-    tool_call_id: Optional[str] = None  # For tool responses
+    tool_call_id: Optional[str] = None  # For tool responses (kept for compat)
     tool_calls: Optional[List[Dict]] = None  # For assistant tool requests
     timestamp: datetime = field(default_factory=datetime.utcnow)
 
@@ -57,13 +58,6 @@ class ChatKitAgent:
     """
 
     def __init__(self, session_id: Optional[str] = None, user_id: Optional[str] = None):
-        """
-        Initialize ChatKit agent.
-
-        Args:
-            session_id: Existing session ID or None to create new
-            user_id: Optional user ID from auth session
-        """
         self.settings = get_settings()
         self.client = get_gemini_client()
         self.tools = RAGTools()
@@ -73,7 +67,6 @@ class ChatKitAgent:
             user_id=user_id
         )
 
-        # Initialize with system prompt
         self._init_system_prompt()
 
     def _init_system_prompt(self) -> None:
@@ -108,37 +101,106 @@ Be helpful, accurate, and educational. If a question is off-topic, politely redi
         ))
 
     def set_mode(self, mode: str) -> None:
-        """
-        Set the answering mode.
-
-        Args:
-            mode: "full_book" for RAG search, "selected_text" for selected text only
-        """
+        """Set the answering mode."""
         if mode not in ("full_book", "selected_text"):
             raise ValueError(f"Invalid mode: {mode}. Must be 'full_book' or 'selected_text'")
         self.state.mode = mode
         logger.info(f"Session {self.state.session_id}: Mode set to {mode}")
 
-    def _format_messages_for_api(self) -> List[Dict[str, Any]]:
-        """Convert conversation messages to OpenAI API format."""
-        api_messages = []
+    def _format_contents_for_api(self) -> tuple:
+        """
+        Convert conversation messages to google-genai Contents format.
 
-        for msg in self.state.messages:
-            api_msg = {"role": msg.role, "content": msg.content}
+        Returns:
+            (contents, system_instruction) tuple.
+            System messages are extracted as system_instruction.
+            Tool messages are represented as function_response Parts.
+        """
+        system_instruction = ""
+        contents = []
 
-            if msg.name:
-                api_msg["name"] = msg.name
-            if msg.tool_call_id:
-                api_msg["tool_call_id"] = msg.tool_call_id
-            if msg.tool_calls:
-                api_msg["tool_calls"] = msg.tool_calls
-                # When there are tool_calls, content might be None
-                if not msg.content:
-                    api_msg["content"] = None
+        i = 0
+        msgs = self.state.messages
+        while i < len(msgs):
+            msg = msgs[i]
 
-            api_messages.append(api_msg)
+            if msg.role == "system":
+                if system_instruction:
+                    system_instruction += "\n\n" + msg.content
+                else:
+                    system_instruction = msg.content
+                i += 1
+                continue
 
-        return api_messages
+            if msg.role == "user":
+                contents.append(genai_types.Content(
+                    role="user",
+                    parts=[genai_types.Part(text=msg.content)]
+                ))
+                i += 1
+                continue
+
+            if msg.role == "assistant":
+                if msg.tool_calls:
+                    parts = []
+                    for tc in msg.tool_calls:
+                        fn = tc.get("function", {})
+                        args = fn.get("arguments", "{}")
+                        if isinstance(args, str):
+                            try:
+                                args = json.loads(args)
+                            except json.JSONDecodeError:
+                                args = {}
+                        parts.append(genai_types.Part(
+                            function_call=genai_types.FunctionCall(
+                                name=fn.get("name", ""),
+                                args=args
+                            )
+                        ))
+                    contents.append(genai_types.Content(role="model", parts=parts))
+                else:
+                    contents.append(genai_types.Content(
+                        role="model",
+                        parts=[genai_types.Part(text=msg.content or "")]
+                    ))
+                i += 1
+                continue
+
+            if msg.role == "tool":
+                result_value = msg.content
+                try:
+                    result_value = json.loads(msg.content)
+                except (json.JSONDecodeError, TypeError):
+                    result_value = {"result": msg.content}
+
+                contents.append(genai_types.Content(
+                    role="user",
+                    parts=[genai_types.Part(
+                        function_response=genai_types.FunctionResponse(
+                            name=msg.name or "tool",
+                            response={"output": result_value}
+                        )
+                    )]
+                ))
+                i += 1
+                continue
+
+            i += 1
+
+        return contents, system_instruction
+
+    def _build_genai_tools(self) -> list:
+        """Convert RAG tool definitions to google-genai Tool format."""
+        tool_defs = RAGTools.get_tool_definitions()
+        fn_declarations = []
+        for t in tool_defs:
+            fn = t["function"]
+            fn_declarations.append(genai_types.FunctionDeclaration(
+                name=fn["name"],
+                description=fn.get("description", ""),
+                parameters=fn.get("parameters", {})
+            ))
+        return [genai_types.Tool(function_declarations=fn_declarations)]
 
     async def process_message(
         self,
@@ -148,113 +210,106 @@ Be helpful, accurate, and educational. If a question is off-topic, politely redi
         """
         Process a user message and generate a response.
 
-        This is the main entry point for non-streaming interactions.
-
-        Args:
-            user_message: The user's question/message
-            selected_text: Optional selected text for selected_text mode
-
         Returns:
-            Dict with:
-                - answer: The generated response
-                - citations: List of citations used
-                - mode: The answering mode used
-                - tool_calls: List of tools that were called
+            Dict with answer, citations, mode, tool_calls, session_id.
         """
-        # Add user message to conversation
         self.state.messages.append(ConversationMessage(
             role="user",
             content=user_message
         ))
         self.state.last_active = datetime.utcnow()
 
-        # If selected text provided, switch to selected_text mode
         if selected_text:
             self.set_mode("selected_text")
-            # Pre-execute the selected text tool to inject context
             retrieval = await self.tools.answer_from_selected_text(
                 selected_text=selected_text,
                 question=user_message
             )
             self.state.retrieval_history.append(retrieval)
-
-            # Add context as a system message
-            context_msg = ConversationMessage(
+            self.state.messages.append(ConversationMessage(
                 role="system",
                 content=f"User has selected the following text:\n{retrieval.context_text}"
-            )
-            self.state.messages.append(context_msg)
-
-        # Get tool definitions
-        tool_defs = RAGTools.get_tool_definitions()
-
-        # Call OpenAI API with tools
-        messages = self._format_messages_for_api()
-
-        response = await self.client.chat.completions.create(
-            model=self.settings.OPENAI_CHAT_MODEL,
-            messages=messages,
-            tools=tool_defs,
-            tool_choice="auto",
-            temperature=self.settings.OPENAI_TEMPERATURE,
-            max_tokens=self.settings.OPENAI_MAX_TOKENS
-        )
-
-        assistant_message = response.choices[0].message
-        tool_calls_made = []
-
-        # Handle tool calls if present
-        if assistant_message.tool_calls:
-            # Add assistant message with tool calls
-            self.state.messages.append(ConversationMessage(
-                role="assistant",
-                content=assistant_message.content or "",
-                tool_calls=[tc.model_dump() for tc in assistant_message.tool_calls]
             ))
 
-            # Execute each tool call
-            for tool_call in assistant_message.tool_calls:
-                tool_name = tool_call.function.name
-                tool_args = json.loads(tool_call.function.arguments)
+        genai_tools = self._build_genai_tools()
+        contents, system_instruction = self._format_contents_for_api()
 
-                logger.info(f"Executing tool: {tool_name} with args: {tool_args}")
-                tool_calls_made.append({"name": tool_name, "arguments": tool_args})
+        config = genai_types.GenerateContentConfig(
+            temperature=self.settings.OPENAI_TEMPERATURE,
+            max_output_tokens=self.settings.OPENAI_MAX_TOKENS,
+            system_instruction=system_instruction or None,
+            tools=genai_tools,
+        )
 
-                # Execute the tool
-                retrieval = await self.tools.execute_tool(tool_name, tool_args)
+        response = await self.client.aio.models.generate_content(
+            model=self.settings.OPENAI_CHAT_MODEL,
+            contents=contents,
+            config=config,
+        )
+
+        tool_calls_made = []
+
+        fn_call_parts = []
+        if response.candidates:
+            fn_call_parts = [
+                p for p in (response.candidates[0].content.parts or [])
+                if p.function_call is not None
+            ]
+
+        if fn_call_parts:
+            self.state.messages.append(ConversationMessage(
+                role="assistant",
+                content="",
+                tool_calls=[
+                    {
+                        "function": {
+                            "name": p.function_call.name,
+                            "arguments": json.dumps(dict(p.function_call.args))
+                        }
+                    }
+                    for p in fn_call_parts
+                ]
+            ))
+
+            for part in fn_call_parts:
+                fn_name = part.function_call.name
+                fn_args = dict(part.function_call.args)
+                logger.info(f"Executing tool: {fn_name} with args: {fn_args}")
+                tool_calls_made.append({"name": fn_name, "arguments": fn_args})
+
+                retrieval = await self.tools.execute_tool(fn_name, fn_args)
                 self.state.retrieval_history.append(retrieval)
 
-                # Add tool result to conversation
                 self.state.messages.append(ConversationMessage(
                     role="tool",
                     content=retrieval.context_text,
-                    name=tool_name,
-                    tool_call_id=tool_call.id
+                    name=fn_name,
                 ))
 
-            # Get final response after tool execution
-            messages = self._format_messages_for_api()
-            final_response = await self.client.chat.completions.create(
-                model=self.settings.OPENAI_CHAT_MODEL,
-                messages=messages,
+            contents, _ = self._format_contents_for_api()
+            final_config = genai_types.GenerateContentConfig(
                 temperature=self.settings.OPENAI_TEMPERATURE,
-                max_tokens=self.settings.OPENAI_MAX_TOKENS
+                max_output_tokens=self.settings.OPENAI_MAX_TOKENS,
+                system_instruction=system_instruction or None,
             )
-            final_content = final_response.choices[0].message.content
+            final_response = await self.client.aio.models.generate_content(
+                model=self.settings.OPENAI_CHAT_MODEL,
+                contents=contents,
+                config=final_config,
+            )
+            final_content = final_response.text or ""
         else:
-            final_content = assistant_message.content
+            final_content = response.text or ""
 
-        # Add final assistant response
         self.state.messages.append(ConversationMessage(
             role="assistant",
             content=final_content
         ))
 
-        # Build citations from retrieval history
         citations = []
         if self.state.retrieval_history:
-            latest_retrieval = self.state.retrieval_history[-1]
-            for chunk in latest_retrieval.chunks:
+            latest = self.state.retrieval_history[-1]
+            for chunk in latest.chunks:
                 if chunk.get("module") != "user_selection":
                     citations.append({
                         "module": chunk.get("module", ""),
@@ -265,7 +320,7 @@ Be helpful, accurate, and educational. If a question is off-topic, politely redi
 
         return {
             "answer": final_content,
-            "citations": citations[:3],  # Top 3 citations
+            "citations": citations[:3],
             "mode": self.state.mode,
             "tool_calls": tool_calls_made,
             "session_id": self.state.session_id
@@ -277,28 +332,16 @@ Be helpful, accurate, and educational. If a question is off-topic, politely redi
         selected_text: Optional[str] = None
     ) -> AsyncIterator[Dict[str, Any]]:
         """
-        Process a user message with streaming response.
+        Process a user message with streaming response via google-genai.
 
         Yields chunks as they're generated.
-
-        Args:
-            user_message: The user's question
-            selected_text: Optional selected text
-
-        Yields:
-            Dict chunks with:
-                - type: "chunk" | "tool_call" | "citation" | "done"
-                - content: The chunk content
-                - metadata: Additional info
         """
-        # Add user message
         self.state.messages.append(ConversationMessage(
             role="user",
             content=user_message
         ))
         self.state.last_active = datetime.utcnow()
 
-        # Handle selected text mode
         if selected_text:
             self.set_mode("selected_text")
             retrieval = await self.tools.answer_from_selected_text(
@@ -306,87 +349,101 @@ Be helpful, accurate, and educational. If a question is off-topic, politely redi
                 question=user_message
             )
             self.state.retrieval_history.append(retrieval)
-
             self.state.messages.append(ConversationMessage(
                 role="system",
                 content=f"User has selected the following text:\n{retrieval.context_text}"
             ))
 
-        tool_defs = RAGTools.get_tool_definitions()
-        messages = self._format_messages_for_api()
+        genai_tools = self._build_genai_tools()
+        contents, system_instruction = self._format_contents_for_api()
 
-        # First API call to check for tool usage
-        response = await self.client.chat.completions.create(
-            model=self.settings.OPENAI_CHAT_MODEL,
-            messages=messages,
-            tools=tool_defs,
-            tool_choice="auto",
+        config = genai_types.GenerateContentConfig(
             temperature=self.settings.OPENAI_TEMPERATURE,
-            max_tokens=self.settings.OPENAI_MAX_TOKENS
+            max_output_tokens=self.settings.OPENAI_MAX_TOKENS,
+            system_instruction=system_instruction or None,
+            tools=genai_tools,
         )
 
-        assistant_message = response.choices[0].message
+        # Non-streaming first call to detect tool use
+        response = await self.client.aio.models.generate_content(
+            model=self.settings.OPENAI_CHAT_MODEL,
+            contents=contents,
+            config=config,
+        )
 
-        # Handle tool calls
-        if assistant_message.tool_calls:
+        fn_call_parts = []
+        if response.candidates:
+            fn_call_parts = [
+                p for p in (response.candidates[0].content.parts or [])
+                if p.function_call is not None
+            ]
+
+        if fn_call_parts:
             self.state.messages.append(ConversationMessage(
                 role="assistant",
-                content=assistant_message.content or "",
-                tool_calls=[tc.model_dump() for tc in assistant_message.tool_calls]
+                content="",
+                tool_calls=[
+                    {
+                        "function": {
+                            "name": p.function_call.name,
+                            "arguments": json.dumps(dict(p.function_call.args))
+                        }
+                    }
+                    for p in fn_call_parts
+                ]
             ))
 
-            for tool_call in assistant_message.tool_calls:
-                tool_name = tool_call.function.name
-                tool_args = json.loads(tool_call.function.arguments)
+            for part in fn_call_parts:
+                fn_name = part.function_call.name
+                fn_args = dict(part.function_call.args)
 
                 yield {
                     "type": "tool_call",
-                    "content": tool_name,
-                    "metadata": {"arguments": tool_args}
+                    "content": fn_name,
+                    "metadata": {"arguments": fn_args}
                 }
 
-                retrieval = await self.tools.execute_tool(tool_name, tool_args)
+                retrieval = await self.tools.execute_tool(fn_name, fn_args)
                 self.state.retrieval_history.append(retrieval)
 
                 self.state.messages.append(ConversationMessage(
                     role="tool",
                     content=retrieval.context_text,
-                    name=tool_name,
-                    tool_call_id=tool_call.id
+                    name=fn_name,
                 ))
 
-            messages = self._format_messages_for_api()
+            contents, _ = self._format_contents_for_api()
 
-        # Stream the final response
-        stream = await self.client.chat.completions.create(
-            model=self.settings.OPENAI_CHAT_MODEL,
-            messages=messages,
+        # Streaming final response
+        stream_config = genai_types.GenerateContentConfig(
             temperature=self.settings.OPENAI_TEMPERATURE,
-            max_tokens=self.settings.OPENAI_MAX_TOKENS,
-            stream=True
+            max_output_tokens=self.settings.OPENAI_MAX_TOKENS,
+            system_instruction=system_instruction or None,
         )
 
         full_content = ""
-        async for chunk in stream:
-            if chunk.choices and chunk.choices[0].delta.content:
-                content = chunk.choices[0].delta.content
-                full_content += content
+        async for chunk in await self.client.aio.models.generate_content_stream(
+            model=self.settings.OPENAI_CHAT_MODEL,
+            contents=contents,
+            config=stream_config,
+        ):
+            text = chunk.text or ""
+            if text:
+                full_content += text
                 yield {
                     "type": "chunk",
-                    "content": content,
+                    "content": text,
                     "metadata": {}
                 }
 
-        # Add complete response to conversation
         self.state.messages.append(ConversationMessage(
             role="assistant",
             content=full_content
         ))
 
-        # Yield citations
         if self.state.retrieval_history:
-            latest_retrieval = self.state.retrieval_history[-1]
-            for chunk in latest_retrieval.chunks[:3]:
+            latest = self.state.retrieval_history[-1]
+            for chunk in latest.chunks[:3]:
                 if chunk.get("module") != "user_selection":
                     yield {
                         "type": "citation",
@@ -409,12 +466,7 @@ Be helpful, accurate, and educational. If a question is off-topic, politely redi
         }
 
     def get_conversation_history(self) -> List[Dict[str, Any]]:
-        """
-        Get the conversation history for persistence.
-
-        Returns:
-            List of message dicts suitable for storage
-        """
+        """Get the conversation history for persistence."""
         history = []
         for msg in self.state.messages:
             if msg.role in ("user", "assistant"):
@@ -426,12 +478,7 @@ Be helpful, accurate, and educational. If a question is off-topic, politely redi
         return history
 
     def restore_conversation(self, history: List[Dict[str, Any]]) -> None:
-        """
-        Restore conversation from stored history.
-
-        Args:
-            history: List of message dicts from get_conversation_history
-        """
+        """Restore conversation from stored history."""
         for msg in history:
             self.state.messages.append(ConversationMessage(
                 role=msg["role"],
