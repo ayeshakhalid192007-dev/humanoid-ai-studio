@@ -48,10 +48,6 @@ class Settings(BaseSettings):
     # ========================================================================
 
     GEMINI_API_KEY: str = Field(..., description="Google Gemini API key")
-    GEMINI_BASE_URL: str = Field(
-        default="https://generativelanguage.googleapis.com/v1beta/openai/",
-        description="Gemini OpenAI-compatible base URL"
-    )
     OPENAI_CHAT_MODEL: str = Field(
         default="gemini-2.0-flash",
         description="Gemini chat model (OpenAI-compatible)"
