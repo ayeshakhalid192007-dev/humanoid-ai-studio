@@ -1,25 +1,26 @@
 """
-Gemini-compatible AsyncOpenAI client factory.
+Native Google GenAI async client factory.
 
-Gemini exposes an OpenAI-compatible REST API, so we reuse the openai
-Python library — just swap the base_url and api_key.
+Uses google-genai SDK directly — no OpenAI-compat shim.
 
 Usage:
     from ..ai.gemini_client import get_gemini_client
-    client = get_gemini_client()
-    response = await client.chat.completions.create(...)
+    client = get_gemini_client()          # google.genai.Client
+    # async call:
+    response = await client.aio.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=[...],
+        config=types.GenerateContentConfig(...)
+    )
 """
-from openai import AsyncOpenAI
+from google import genai
 from ..config import get_settings
 
 
-def get_gemini_client() -> AsyncOpenAI:
+def get_gemini_client() -> genai.Client:
     """
-    Return an AsyncOpenAI client pointed at Gemini's OpenAI-compatible endpoint.
-    The same openai SDK methods (chat.completions.create, stream=True, etc.) work unchanged.
+    Return a native google-genai Client.
+    Use client.aio.* for async operations.
     """
     settings = get_settings()
-    return AsyncOpenAI(
-        api_key=settings.GEMINI_API_KEY,
-        base_url=settings.GEMINI_BASE_URL,
-    )
+    return genai.Client(api_key=settings.GEMINI_API_KEY)
