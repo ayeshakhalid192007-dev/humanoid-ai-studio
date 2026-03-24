@@ -11,6 +11,7 @@ from typing import Dict, Any
 
 from ..config import get_settings
 from ..ai.gemini_client import get_gemini_client
+from google.genai import types as genai_types
 
 
 class ContentPersonalizer:
@@ -76,17 +77,20 @@ CRITICAL: Your output must be ONLY the adapted chapter content. No meta-commenta
             f"{chapter_content}"
         )
 
-        response = await self.client.chat.completions.create(
+        response = await self.client.aio.models.generate_content(
             model=self.model,
-            messages=[
-                {"role": "system", "content": self.system_prompt},
-                {"role": "user", "content": user_message},
-            ],
-            temperature=0.3,
-            max_tokens=16000,
+            contents=[genai_types.Content(
+                role="user",
+                parts=[genai_types.Part(text=user_message)]
+            )],
+            config=genai_types.GenerateContentConfig(
+                temperature=0.3,
+                max_output_tokens=16000,
+                system_instruction=self.system_prompt,
+            ),
         )
 
-        content = response.choices[0].message.content
+        content = response.text
         if not content:
             raise RuntimeError("Empty AI response from personalization")
         return content

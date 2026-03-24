@@ -11,6 +11,7 @@ from typing import List, Dict, Any
 
 from ..config import get_settings
 from ..ai.gemini_client import get_gemini_client
+from google.genai import types as genai_types
 
 
 class Generator:
@@ -70,15 +71,18 @@ Be concise, accurate, and educational."""
         messages = self._build_messages(query, context, conversation_history)
 
         try:
-            # Generate answer
-            response = await self.client.chat.completions.create(
+            contents, system_instruction = self._messages_to_genai(messages)
+            response = await self.client.aio.models.generate_content(
                 model=self.model,
-                messages=messages,
-                temperature=0.7,
-                max_tokens=500
+                contents=contents,
+                config=genai_types.GenerateContentConfig(
+                    temperature=0.7,
+                    max_output_tokens=500,
+                    system_instruction=system_instruction or None,
+                ),
             )
 
-            answer = response.choices[0].message.content
+            answer = response.text
 
             return {
                 "answer": answer,
@@ -87,6 +91,27 @@ Be concise, accurate, and educational."""
 
         except Exception as e:
             raise RuntimeError(f"Answer generation failed: {str(e)}")
+
+    def _messages_to_genai(self, messages: List[Dict[str, str]]) -> tuple:
+        """Convert OpenAI-style messages list to google-genai (contents, system_instruction)."""
+        system_instruction = ""
+        contents = []
+        for msg in messages:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            if role == "system":
+                system_instruction = content
+            elif role == "user":
+                contents.append(genai_types.Content(
+                    role="user",
+                    parts=[genai_types.Part(text=content)]
+                ))
+            elif role == "assistant":
+                contents.append(genai_types.Content(
+                    role="model",
+                    parts=[genai_types.Part(text=content)]
+                ))
+        return contents, system_instruction
 
     def _build_context(self, retrieved_chunks: List[Dict[str, Any]]) -> tuple:
         """
@@ -173,17 +198,19 @@ Be concise, accurate, and educational."""
         messages = self._build_messages(query, context, conversation_history)
 
         try:
-            stream = await self.client.chat.completions.create(
+            contents, system_instruction = self._messages_to_genai(messages)
+            async for chunk in await self.client.aio.models.generate_content_stream(
                 model=self.model,
-                messages=messages,
-                temperature=0.7,
-                max_tokens=500,
-                stream=True
-            )
-
-            async for chunk in stream:
-                if chunk.choices and chunk.choices[0].delta.content:
-                    yield chunk.choices[0].delta.content
+                contents=contents,
+                config=genai_types.GenerateContentConfig(
+                    temperature=0.7,
+                    max_output_tokens=500,
+                    system_instruction=system_instruction or None,
+                ),
+            ):
+                text = chunk.text or ""
+                if text:
+                    yield text
 
         except Exception as e:
             raise RuntimeError(f"Streaming generation failed: {str(e)}")
