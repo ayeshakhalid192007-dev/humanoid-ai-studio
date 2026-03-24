@@ -174,6 +174,14 @@
   background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
+/* Options must have an explicit dark bg — they inherit color:white from the
+   select, and without a background the native dropdown renders them as
+   white-on-white (invisible) on light OS themes. */
+.select option {
+  background-color: #1a1a26;
+  color: #e8e8f0;
+}
+
 .errorMessage {
   background: rgba(220, 38, 38, 0.1);
   color: #fab3b3;
@@ -919,6 +927,64 @@
   75% {
     transform: translate(-20px, 20px) scale(1.05);
   }
+}
+
+/* Social login buttons container */
+.socialButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Individual social login button */
+.socialButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: var(--fm-radius-md) !important;
+  background: var(--fm-bg-tertiary) !important;
+  color: var(--fm-text-primary) !important;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--fm-transition-base) !important;
+  box-sizing: border-box;
+}
+
+.socialButton:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: var(--fm-accent-primary) !important;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.1) !important;
+  transform: translateY(-1px);
+}
+
+.socialButton:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* "or sign in with email" divider */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.5rem 0 1.25rem;
+  color: var(--fm-text-tertiary) !important;
+  font-size: 0.8125rem;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Responsive adjustments */

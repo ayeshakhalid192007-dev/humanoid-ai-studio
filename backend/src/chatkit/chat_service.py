@@ -16,11 +16,11 @@ from datetime import datetime
 from dataclasses import dataclass, asdict
 
 import asyncpg
-from openai import AsyncOpenAI
 
 from .agent import ChatKitAgent
 from .context_injector import ContextInjector
 from ..config import get_settings
+from ..ai.gemini_client import get_gemini_client
 from ..utils.logger import get_logger
 from ..db.neon_client import get_neon_client
 
@@ -69,7 +69,7 @@ class ChatKitService:
     def __init__(self):
         self.logger = get_logger(__name__)
         self.settings = get_settings()
-        self.client = AsyncOpenAI(api_key=self.settings.OPENAI_API_KEY)
+        self.client = get_gemini_client()
 
     async def get_thread(self, thread_id: str, user_id: Optional[str] = None) -> Optional[ChatKitThread]:
         """
@@ -333,6 +333,7 @@ class ChatKitService:
     async def run_thread_streaming(
         self,
         thread_id: str,
+        user_message: Optional[str] = None,
         user_id: Optional[str] = None,
         page_context: Optional[Dict[str, Any]] = None
     ) -> AsyncIterator[Dict[str, Any]]:
@@ -357,9 +358,6 @@ class ChatKitService:
             else:
                 session_id = thread_id
 
-            # Get recent messages for context
-            recent_messages = await self.list_messages(thread_id, limit=5)
-
             # Prepare context for the agent
             from .context_injector import ConversationContext
 
@@ -383,19 +381,20 @@ class ChatKitService:
             # Inject context to agent
             await context_injector.inject_context_to_agent(agent, conv_context)
 
-            # Get most recent user message as prompt
-            last_user_message = None
-            for msg in reversed(recent_messages):
-                if msg.role == "user":
-                    last_user_message = msg.content[0]['text']['value']
-                    break
+            # Use the directly passed message; fall back to fetching latest from DB
+            last_user_message = user_message
+            if not last_user_message:
+                recent_messages = await self.list_messages(thread_id, limit=5)
+                for msg in reversed(recent_messages):
+                    if msg.role == "user":
+                        last_user_message = msg.content[0]['text']['value']
+                        break
 
             if not last_user_message:
                 yield {
                     "type": "error",
-                    "data": {
-                        "message": "No user message found to respond to"
-                    }
+                    "content": "No user message found to respond to",
+                    "metadata": {}
                 }
                 return
 

@@ -23,7 +23,7 @@ from ..db.neon_client import get_neon_client
 from ..chatkit.chat_service import ChatKitService, ChatKitThread
 
 # Create router for ChatKit endpoints
-router = APIRouter(prefix="/chatkit", tags=["chatkit"])
+router = APIRouter(prefix="/api/chatkit", tags=["chatkit"])
 logger = get_logger(__name__)
 
 # Initialize ChatKit server and service
@@ -170,6 +170,7 @@ async def create_message(
                 # Use the chat service to run the thread with streaming
                 async for chunk in chatkit_service.run_thread_streaming(
                     thread_id=thread_id,
+                    user_message=message_text,
                     user_id=user.id if user else None,
                     page_context=page_context
                 ):
@@ -216,8 +217,6 @@ async def create_message(
             headers={
                 "Cache-Control": "no-cache",
                 "Connection": "keep-alive",
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Credentials": "true"
             }
         )
     except HTTPException:

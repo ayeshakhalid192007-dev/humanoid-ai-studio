@@ -14,10 +14,9 @@ from datetime import datetime
 import json
 import uuid
 
-from openai import AsyncOpenAI
-
 from .tools import RAGTools, RetrievalResult
 from ..config import get_settings
+from ..ai.gemini_client import get_gemini_client
 from ..utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -66,7 +65,7 @@ class ChatKitAgent:
             user_id: Optional user ID from auth session
         """
         self.settings = get_settings()
-        self.client = AsyncOpenAI(api_key=self.settings.OPENAI_API_KEY)
+        self.client = get_gemini_client()
         self.tools = RAGTools()
 
         self.state = ConversationState(

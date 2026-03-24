@@ -8,15 +8,14 @@ Author: Physical AI Platform Team
 Date: 2026-02-09
 """
 from typing import List, Dict, Any
-import openai
-from openai import AsyncOpenAI
 
 from ..config import get_settings
+from ..ai.gemini_client import get_gemini_client
 
 
 class Generator:
     """
-    Handles answer generation using OpenAI LLM with RAG context.
+    Handles answer generation using Gemini LLM with RAG context.
 
     Features:
     - Curriculum-scoped system prompt
@@ -27,8 +26,8 @@ class Generator:
 
     def __init__(self):
         self.settings = get_settings()
-        self.client = AsyncOpenAI(api_key=self.settings.OPENAI_API_KEY)
-        self.model = "gpt-4o-mini"
+        self.client = get_gemini_client()
+        self.model = self.settings.OPENAI_CHAT_MODEL
         self.max_context_tokens = 8000  # FR-040
 
         self.system_prompt = """You are a helpful AI assistant for the Physical AI & Humanoid Robotics curriculum.

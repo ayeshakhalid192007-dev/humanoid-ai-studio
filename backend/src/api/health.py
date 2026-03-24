@@ -60,7 +60,7 @@ async def health_check() -> HealthResponse:
         neon_client = NeonClient()
         neon_healthy = await asyncio.wait_for(
             neon_client.health_check(),
-            timeout=2.0
+            timeout=8.0
         )
         services["neon"] = "up" if neon_healthy else "down"
     except asyncio.TimeoutError:
@@ -71,9 +71,9 @@ async def health_check() -> HealthResponse:
         if neon_client:
             await neon_client.close()
 
-    # Check OpenAI (passive - just verify key is configured)
+    # Check Gemini (passive - just verify key is configured)
     settings = get_settings()
-    services["openai"] = "up" if settings.OPENAI_API_KEY else "down"
+    services["gemini"] = "up" if settings.GEMINI_API_KEY else "down"
 
     # Determine overall status
     all_up = all(s == "up" for s in services.values())

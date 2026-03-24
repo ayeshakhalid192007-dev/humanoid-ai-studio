@@ -818,15 +818,26 @@ class NeonClient:
         """
         Check if Neon Postgres is accessible.
 
+        Uses a single direct connection (not a pool) for fast health checks
+        that avoid cold-start delays on Neon serverless.
+
         Returns:
             True if healthy (SELECT 1 succeeds), False otherwise
         """
         try:
-            if not self.pool:
-                await self.connect()
-            async with self.pool.acquire() as conn:
-                result = await conn.fetchval("SELECT 1")
-                return result == 1
+            if self.pool:
+                # Reuse existing pool if already connected
+                async with self.pool.acquire() as conn:
+                    result = await conn.fetchval("SELECT 1")
+                    return result == 1
+            else:
+                # Single connection — avoids creating a 5-connection pool
+                conn = await asyncpg.connect(self.database_url)
+                try:
+                    result = await conn.fetchval("SELECT 1")
+                    return result == 1
+                finally:
+                    await conn.close()
         except Exception:
             return False
 

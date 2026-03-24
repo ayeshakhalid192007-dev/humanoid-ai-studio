@@ -8,23 +8,23 @@ Author: Physical AI Platform Team
 Date: 2026-02-16
 """
 from typing import Dict, Any
-from openai import AsyncOpenAI
 
 from ..config import get_settings
+from ..ai.gemini_client import get_gemini_client
 
 
 class ContentPersonalizer:
     """
     Personalizes chapter content based on user profile data.
 
-    Uses OpenAI gpt-4o-mini to adapt explanations and examples while
+    Uses Gemini to adapt explanations and examples while
     preserving headings, sections, and ordering.
     """
 
     def __init__(self):
         self.settings = get_settings()
-        self.client = AsyncOpenAI(api_key=self.settings.OPENAI_API_KEY)
-        self.model = "gpt-4o-mini"
+        self.client = get_gemini_client()
+        self.model = self.settings.OPENAI_CHAT_MODEL
 
         self.system_prompt = """You are an expert educational content personalizer for a Physical AI & Humanoid Robotics curriculum.
 

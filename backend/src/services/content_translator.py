@@ -8,22 +8,21 @@ and keeps technical terms in English.
 Author: Physical AI Platform Team
 Date: 2026-02-16
 """
-from openai import AsyncOpenAI
-
 from ..config import get_settings
+from ..ai.gemini_client import get_gemini_client
 
 
 class ContentTranslator:
     """
-    Translates chapter content to Urdu using OpenAI gpt-4o-mini.
+    Translates chapter content to Urdu using Gemini.
 
     Preserves all Markdown formatting, code blocks, and technical terms.
     """
 
     def __init__(self):
         self.settings = get_settings()
-        self.client = AsyncOpenAI(api_key=self.settings.OPENAI_API_KEY)
-        self.model = "gpt-4o-mini"
+        self.client = get_gemini_client()
+        self.model = self.settings.OPENAI_CHAT_MODEL
 
         self.system_prompt = """You are an expert translator specializing in translating technical educational content from English to Urdu.
 

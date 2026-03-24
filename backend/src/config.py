@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     Application settings loaded from environment variables using Pydantic BaseSettings.
 
     Required variables:
-    - OPENAI_API_KEY: OpenAI API key for embeddings and chat
+    - GEMINI_API_KEY: Google Gemini API key (free tier at aistudio.google.com)
     - QDRANT_URL: Qdrant Cloud URL (e.g., https://xyz.cloud.qdrant.io)
     - QDRANT_API_KEY: Qdrant API key
     - NEON_DATABASE_URL: Neon Postgres connection string
@@ -43,17 +43,18 @@ class Settings(BaseSettings):
     )
 
     # ========================================================================
-    # OpenAI Configuration
+    # Gemini API Configuration (replaces OpenAI — free tier available)
+    # Get key from: https://aistudio.google.com/apikey
     # ========================================================================
 
-    OPENAI_API_KEY: str = Field(..., description="OpenAI API key")
-    OPENAI_EMBEDDING_MODEL: str = Field(
-        default="text-embedding-3-small",
-        description="OpenAI embedding model (1536 dimensions)"
+    GEMINI_API_KEY: str = Field(..., description="Google Gemini API key")
+    GEMINI_BASE_URL: str = Field(
+        default="https://generativelanguage.googleapis.com/v1beta/openai/",
+        description="Gemini OpenAI-compatible base URL"
     )
     OPENAI_CHAT_MODEL: str = Field(
-        default="gpt-4o-mini",
-        description="OpenAI chat model (FR-041)"
+        default="gemini-2.0-flash",
+        description="Gemini chat model (OpenAI-compatible)"
     )
     OPENAI_MAX_TOKENS: int = Field(
         default=2000,
@@ -68,6 +69,11 @@ class Settings(BaseSettings):
         description="Temperature for factual answers"
     )
 
+    # Keep for backward-compat — returns GEMINI_API_KEY
+    @property
+    def OPENAI_API_KEY(self) -> str:
+        return self.GEMINI_API_KEY
+
     # ========================================================================
     # Qdrant Configuration
     # ========================================================================
@@ -79,8 +85,8 @@ class Settings(BaseSettings):
         description="Qdrant collection name"
     )
     QDRANT_VECTOR_SIZE: int = Field(
-        default=1536,
-        description="Vector size (must match embedding model)"
+        default=384,
+        description="Vector size — 384 for all-MiniLM-L6-v2 (sentence-transformers)"
     )
     QDRANT_SEARCH_LIMIT: int = Field(
         default=5,
