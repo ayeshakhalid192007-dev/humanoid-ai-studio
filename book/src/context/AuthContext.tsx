@@ -462,38 +462,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ── Social sign-in — PKCE relay through Better Auth social provider ──────
 
   const signInWithSocial = useCallback(async (provider: 'google' | 'github') => {
-    // Build a fresh PKCE authorize URL. After social auth completes, Better Auth
-    // redirects to this URL. The auth server sees the active session cookie and
-    // issues a platform PKCE code, completing the token flow identically to
-    // email/password login.
+    // Build a fresh PKCE authorize URL (pure local crypto — no network call).
+    // After social auth completes, Better Auth redirects to this URL so the
+    // OIDC provider can issue a PKCE code and complete the token flow.
     const { url: authorizeUrl } = await buildAuthorizationUrl({
       authServerUrl: AUTH_API_URL,
       clientId: CLIENT_ID,
       redirectUri: REDIRECT_URI,
     });
 
-    // Ask Better Auth to start the social sign-in and return the provider redirect URL
-    const resp = await fetch(`${AUTH_API_URL}/api/auth/sign-in/social`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ provider, callbackURL: authorizeUrl }),
-    });
-
-    if (!resp.ok) {
-      throw new Error("Failed to initiate social sign-in");
-    }
-
-    const data = await resp.json();
-    // Better Auth returns the provider redirect URL in one of these fields
-    const redirectUrl: string = data.url ?? data.redirect ?? data.redirectTo;
-
-    if (!redirectUrl) {
-      throw new Error("No redirect URL returned from auth server");
-    }
-
-    // Navigate to the provider's OAuth consent screen
-    window.location.href = redirectUrl;
+    // Navigate the browser directly to the auth server's social sign-in endpoint.
+    // Using window.location.href (browser navigation) instead of fetch avoids
+    // CORS restrictions — XHR/fetch is blocked cross-origin, but browser
+    // navigations are not subject to CORS.
+    // Better Auth's social sign-in uses provider as a path segment:
+    //   GET /api/auth/sign-in/social/:provider?callbackURL=...
+    const params = new URLSearchParams({ callbackURL: authorizeUrl });
+    window.location.href = `${AUTH_API_URL}/api/auth/sign-in/social/${provider}?${params.toString()}`;
   }, [AUTH_API_URL, CLIENT_ID, REDIRECT_URI]);
 
   // ─────────────────────────────────────────────────────────────────────────
