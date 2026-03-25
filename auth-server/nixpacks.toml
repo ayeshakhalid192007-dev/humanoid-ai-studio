@@ -2,4 +2,4 @@
 nixPkgs = ["nodejs_18"]
 
 [start]
-cmd = "node src/index.js"
+cmd = "node --experimental-global-webcrypto src/index.js"
