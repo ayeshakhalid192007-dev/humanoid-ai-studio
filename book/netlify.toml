@@ -1,0 +1,13 @@
+[build]
+  base    = "book"
+  command = "npm run build"
+  publish = "build"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA-style fallback — Docusaurus handles its own routing
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
