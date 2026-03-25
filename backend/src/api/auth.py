@@ -43,86 +43,112 @@ class AuthenticatedUser:
 
 class BetterAuthClient:
     """
-    Client for validating sessions with Better Auth server.
+    Client for validating sessions / OAuth tokens with the Better Auth server.
 
-    Better Auth stores sessions in the database and provides
-    a /api/auth/session endpoint for validation.
+    Supports two validation strategies:
+    1. OAuth Bearer token  → /api/auth/oauth2/userinfo  (new OIDC flow)
+    2. Cookie session token → /api/auth/get-session     (legacy cookie flow)
+
+    Strategy 1 is tried first for Bearer tokens; if it fails the token is
+    treated as a legacy opaque session token and re-tried via strategy 2.
     """
 
     def __init__(self, auth_url: Optional[str] = None):
-        """
-        Initialize Better Auth client.
-
-        Args:
-            auth_url: Base URL of Better Auth server (defaults to BETTER_AUTH_URL env)
-        """
         self.auth_url = auth_url or getattr(settings, 'BETTER_AUTH_URL', 'http://localhost:3002')
+        self.userinfo_endpoint = f"{self.auth_url}/api/auth/oauth2/userinfo"
         self.session_endpoint = f"{self.auth_url}/api/auth/get-session"
 
-    async def validate_session(self, session_token: str) -> Optional[AuthenticatedUser]:
+    async def _user_from_userinfo(self, data: dict) -> AuthenticatedUser:
+        """Map OIDC userinfo response to AuthenticatedUser."""
+        return AuthenticatedUser(
+            user_id=data.get("sub") or data.get("id"),
+            email=data.get("email"),
+            name=data.get("name"),
+            session_id=None,
+            session_expires_at=None,
+            metadata={
+                "emailVerified": data.get("email_verified"),
+                "role": data.get("role"),
+                "onboardingCompleted": data.get("onboardingCompleted"),
+            }
+        )
+
+    async def _user_from_session(self, data: dict) -> Optional[AuthenticatedUser]:
+        """Map Better Auth get-session response to AuthenticatedUser."""
+        if not data.get("user"):
+            return None
+        user_data = data["user"]
+        session_data = data.get("session", {})
+        return AuthenticatedUser(
+            user_id=user_data.get("id"),
+            email=user_data.get("email"),
+            name=user_data.get("name"),
+            session_id=session_data.get("id"),
+            session_expires_at=(
+                datetime.fromisoformat(session_data["expiresAt"])
+                if session_data.get("expiresAt") else None
+            ),
+            metadata={
+                "emailVerified": user_data.get("emailVerified"),
+                "createdAt": user_data.get("createdAt"),
+                "updatedAt": user_data.get("updatedAt"),
+            }
+        )
+
+    async def validate_bearer_token(self, token: str) -> Optional[AuthenticatedUser]:
         """
-        Validate a session token with Better Auth.
-
-        Args:
-            session_token: The session token from cookie or header
-
-        Returns:
-            AuthenticatedUser if valid, None if invalid/expired
+        Validate an OAuth access token via the OIDC userinfo endpoint.
+        Falls back to legacy session-cookie validation if userinfo returns 401.
         """
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    self.session_endpoint,
-                    cookies={"physical-ai.session_token": session_token},
-                    timeout=5.0
+                # Strategy 1: OIDC userinfo (OAuth access tokens)
+                resp = await client.get(
+                    self.userinfo_endpoint,
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=5.0,
                 )
+                if resp.status_code == 200:
+                    return await self._user_from_userinfo(resp.json())
 
-                if response.status_code != 200:
-                    logger.warning(f"Session validation failed: {response.status_code}")
-                    return None
+                # Strategy 2: legacy opaque session token sent as cookie
+                if resp.status_code in (401, 400):
+                    resp2 = await client.get(
+                        self.session_endpoint,
+                        cookies={"physical-ai.session_token": token},
+                        timeout=5.0,
+                    )
+                    if resp2.status_code == 200:
+                        return await self._user_from_session(resp2.json())
 
-                data = response.json()
-
-                if not data.get("user"):
-                    return None
-
-                user_data = data["user"]
-                session_data = data.get("session", {})
-
-                return AuthenticatedUser(
-                    user_id=user_data.get("id"),
-                    email=user_data.get("email"),
-                    name=user_data.get("name"),
-                    session_id=session_data.get("id"),
-                    session_expires_at=datetime.fromisoformat(session_data["expiresAt"]) if session_data.get("expiresAt") else None,
-                    metadata={
-                        "emailVerified": user_data.get("emailVerified"),
-                        "createdAt": user_data.get("createdAt"),
-                        "updatedAt": user_data.get("updatedAt")
-                    }
-                )
+                logger.warning(f"Bearer token validation failed: {resp.status_code}")
+                return None
 
         except httpx.TimeoutException:
-            logger.error("Better Auth session validation timed out")
+            logger.error("Auth server token validation timed out")
             return None
         except Exception as e:
-            logger.error(f"Better Auth validation error: {e}")
+            logger.error(f"Auth token validation error: {e}")
             return None
 
     async def validate_session_cookie(self, request: Request) -> Optional[AuthenticatedUser]:
-        """
-        Validate session from request cookies.
-
-        Args:
-            request: FastAPI request object
-
-        Returns:
-            AuthenticatedUser if valid session cookie exists
-        """
+        """Validate session from request cookies (legacy cookie flow)."""
         session_token = request.cookies.get("physical-ai.session_token")
         if not session_token:
             return None
-        return await self.validate_session(session_token)
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(
+                    self.session_endpoint,
+                    cookies={"physical-ai.session_token": session_token},
+                    timeout=5.0,
+                )
+                if resp.status_code == 200:
+                    return await self._user_from_session(resp.json())
+                return None
+        except Exception as e:
+            logger.error(f"Cookie session validation error: {e}")
+            return None
 
 
 # Singleton client instance
@@ -149,20 +175,21 @@ async def get_optional_user(
     Dependency: Get authenticated user if available, None otherwise.
 
     Checks both:
-    1. Authorization Bearer header
-    2. Session cookie
+    1. Authorization: Bearer <token>  (OAuth access token via OIDC userinfo,
+                                       with legacy opaque-session fallback)
+    2. physical-ai.session_token cookie (legacy cookie sessions)
 
     Use this for endpoints that work with or without auth.
     """
     auth_client = get_auth_client()
 
-    # Try Bearer token first
+    # Try Bearer token first (OAuth access tokens + legacy tokens)
     if credentials and credentials.credentials:
-        user = await auth_client.validate_session(credentials.credentials)
+        user = await auth_client.validate_bearer_token(credentials.credentials)
         if user:
             return user
 
-    # Fall back to cookie
+    # Fall back to cookie session
     return await auth_client.validate_session_cookie(request)
 
 

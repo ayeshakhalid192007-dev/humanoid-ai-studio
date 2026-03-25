@@ -10,6 +10,7 @@ Author: Physical AI Platform Team
 Date: 2026-02-09
 """
 import asyncpg
+import json
 import os
 from typing import Optional, Dict, Any, List
 from uuid import UUID
@@ -101,7 +102,7 @@ class NeonClient:
                 RETURNING session_id, created_at, last_active_at, metadata
                 """,
                 session_id,
-                metadata,
+                json.dumps(metadata),
             )
 
             return dict(result)
@@ -180,9 +181,9 @@ class NeonClient:
                 session_id,
                 query,
                 response,
-                retrieved_chunks,
+                json.dumps(retrieved_chunks),
                 page_context,
-                metadata,
+                json.dumps(metadata),
             )
 
             return turn_id
@@ -367,7 +368,6 @@ class NeonClient:
         content_version: str,
     ) -> int:
         """Insert or update personalized content cache (legacy method)."""
-        import json
         async with self.pool.acquire() as conn:
             row_id = await conn.fetchval(
                 """
@@ -522,12 +522,12 @@ class NeonClient:
                 agent_type,
                 grounding_policy,
                 skills_used,
-                skills_detail,
+                json.dumps(skills_detail),
                 token_count,
                 model,
                 latency_ms,
                 cached,
-                request_metadata,
+                json.dumps(request_metadata),
             )
             return log_id
 
@@ -629,7 +629,6 @@ class NeonClient:
         prompt_version: str = ""
     ) -> int:
         """Insert or update personalized content cache with prompt version."""
-        import json
         async with self.pool.acquire() as conn:
             row_id = await conn.fetchval(
                 """
@@ -818,15 +817,26 @@ class NeonClient:
         """
         Check if Neon Postgres is accessible.
 
+        Uses a single direct connection (not a pool) for fast health checks
+        that avoid cold-start delays on Neon serverless.
+
         Returns:
             True if healthy (SELECT 1 succeeds), False otherwise
         """
         try:
-            if not self.pool:
-                await self.connect()
-            async with self.pool.acquire() as conn:
-                result = await conn.fetchval("SELECT 1")
-                return result == 1
+            if self.pool:
+                # Reuse existing pool if already connected
+                async with self.pool.acquire() as conn:
+                    result = await conn.fetchval("SELECT 1")
+                    return result == 1
+            else:
+                # Single connection — avoids creating a 5-connection pool
+                conn = await asyncpg.connect(self.database_url)
+                try:
+                    result = await conn.fetchval("SELECT 1")
+                    return result == 1
+                finally:
+                    await conn.close()
         except Exception:
             return False
 

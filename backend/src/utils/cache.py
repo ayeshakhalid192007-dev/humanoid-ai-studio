@@ -393,6 +393,16 @@ class EmbeddingCache:
             self.cache = await get_cache_manager()
         return self.cache
 
+    async def get(self, namespace: str, key: str, **kwargs):
+        """Generic get — delegates to underlying cache manager."""
+        cache = await self.get_cache()
+        return await cache.get(namespace, key, **kwargs)
+
+    async def set(self, namespace: str, key: str, value, ttl: int = 3600, **kwargs):
+        """Generic set — delegates to underlying cache manager."""
+        cache = await self.get_cache()
+        await cache.set(namespace, key, value, ttl, **kwargs)
+
     async def get_embedding(self, content_hash: str) -> Optional[List[float]]:
         """Get cached embedding."""
         cache = await self.get_cache()

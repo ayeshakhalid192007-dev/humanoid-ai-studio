@@ -19,6 +19,7 @@ try:
     QDRANT_AVAILABLE = True
 except ImportError:
     QDRANT_AVAILABLE = False
+    ScoredPoint = None
     from src.db.qdrant_mock import MockQdrantClient
 
 
@@ -122,14 +123,15 @@ class QdrantClient:
 
         query_filter = Filter(must=must_conditions) if must_conditions else None
 
-        # Perform vector search
-        search_results: List[ScoredPoint] = self.client.search(
+        # Perform vector search using query_points (qdrant-client >= 1.7)
+        query_response = self.client.query_points(
             collection_name=self.collection_name,
-            query_vector=query_vector,
+            query=query_vector,
             limit=limit,
             score_threshold=score_threshold,
             query_filter=query_filter,
         )
+        search_results = query_response.points
 
         # Convert to dict format
         results = []

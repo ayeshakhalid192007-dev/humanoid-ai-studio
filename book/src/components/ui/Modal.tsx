@@ -82,7 +82,7 @@ export const Modal: React.FC<ModalProps> = ({
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 400 }}
         >
-          {(title || onClose) && (
+          {(title || true) && (
             <div className="fm-flex-between border-b border-fm-text-tertiary fm-pb-4 mb-4">
               {title && (
                 <h2 className="fm-h4 text-fm-text-primary">{title}</h2>

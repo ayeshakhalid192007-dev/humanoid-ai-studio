@@ -3,24 +3,27 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { useLocation } from '@docusaurus/router';
-import { Button } from '../ui/Button'; // Use unified button component
-import ChatbotWidget from '../ChatbotWidget/FuturisticChatbotWidget';
-import { useAuth } from '../../context/AuthContext';
-import { UserMenu } from '../Auth/UserMenu';
 import BrowserOnly from '@docusaurus/BrowserOnly';
+import { Button } from '../ui/Button';
 
-const FuturisticNavbar = () => {
+/**
+ * Inner navbar that has access to auth context (client-only).
+ * Hooks are called at the top level of this component — no violations.
+ */
+function FuturisticNavbarInner() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { siteConfig } = useDocusaurusContext();
+
+  // Auth hook called at top-level — no hooks-in-callbacks violation
+  const { useAuth } = require('../../context/AuthContext') as typeof import('../../context/AuthContext');
+  const { isAuthenticated, user, signOut } = useAuth();
+
+  // Lazy import UserMenu to keep it client-only
+  const { UserMenu } = require('../Auth/UserMenu') as typeof import('../Auth/UserMenu');
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-
-    // Use passive event listener for better performance
+    const handleScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -32,30 +35,30 @@ const FuturisticNavbar = () => {
   ];
 
   const isActive = (href: string) => {
-    // For anchor links on the homepage, always return false for pathname matching
-    if (href.startsWith('#') && location.pathname === '/') return false;
+    if (href.startsWith('#')) return false;
+    if (href === '/') return location.pathname === '/humanoid-ai-studio/' || location.pathname === '/';
+    return location.pathname === href || location.pathname.startsWith(href + '/');
+  };
 
-    // For non-anchor navigation
-    if (!href.startsWith('#')) {
-      // Check if it's the dashboard link
-      if (href === '/dashboard' && location.pathname.startsWith('/dashboard')) {
-        return true;
+  const scrollToSection = (href: string) => {
+    try {
+      const el = document.querySelector(href);
+      if (el) {
+        const top = el.getBoundingClientRect().top + window.pageYOffset - 100;
+        window.scrollTo({ top, behavior: 'smooth' });
       }
-      // Check if current location pathname matches href
-      return location.pathname === href || location.pathname.startsWith(href + '/');
+    } catch {
+      window.location.hash = href;
     }
-
-    // For all other cases (shouldn't normally reach here for href matching)
-    return false;
   };
 
   return (
     <motion.nav
       className={`fm-navbar navbar navbar--fixed-top ${isScrolled ? 'fm-navbar-scrolled' : ''}`}
-      id="navbar"  // Add navbar ID that Docusaurus expects
+      id="navbar"
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
     >
       <div className="fm-navbar__container">
         {/* Logo */}
@@ -64,38 +67,23 @@ const FuturisticNavbar = () => {
           <span className="fm-text-tertiary">.io</span>
         </Link>
 
-        {/* Desktop Navigation with boxes */}
-        <div className="hidden md:flex items-center gap-2">
+        {/* Desktop nav links */}
+        <div className="fm-navbar__nav">
           {navLinks.map((link, index) => {
             const isAnchorLink = link.href.startsWith('#');
-            const isActiveLink = isActive(link.href);
-
+            const active = isActive(link.href);
             return (
               <Link
                 key={link.name}
                 href={link.href}
-                className={`fm-navbar__link ${isActiveLink ? 'fm-navbar__link--active' : ''}`}
+                className={`fm-navbar__link ${active ? 'fm-navbar__link--active' : ''}`}
+                style={{ transitionDelay: `${index * 0.05}s` }}
                 onClick={(e) => {
                   if (isAnchorLink && location.pathname === '/') {
                     e.preventDefault();
-                    try {
-                      const targetElement = document.querySelector(link.href);
-                      if (targetElement) {
-                        const elementPosition = targetElement.getBoundingClientRect().top;
-                        const offsetPosition = elementPosition + window.pageYOffset - 100; // Account for fixed navbar
-                        window.scrollTo({
-                          top: offsetPosition,
-                          behavior: 'smooth'
-                        });
-                      }
-                    } catch (error) {
-                      console.warn('Error scrolling to element:', error);
-                      // Fallback to regular navigation if smooth scrolling fails
-                      window.location.hash = link.href;
-                    }
+                    scrollToSection(link.href);
                   }
                 }}
-                style={{ transitionDelay: `${index * 0.05}s` }}
               >
                 {link.name}
               </Link>
@@ -103,44 +91,31 @@ const FuturisticNavbar = () => {
           })}
         </div>
 
-        {/* Desktop Chatbot and Auth Buttons */}
-        <div className="hidden md:flex fm-navbar__auth-container">
+        {/* Desktop auth area */}
+        <div className="fm-navbar__auth-container">
           <div className="fm-navbar__auth-inner">
-            <div className="fm-chatbot-upper-container">
-              <ChatbotWidget position="upper" />
-            </div>
-            <BrowserOnly fallback={<div>Loading...</div>}>
-              {() => {
-                const { isAuthenticated, signOut, isLoading } = useAuth();
-
-                if (isAuthenticated) {
-                  return <UserMenu />;
-                }
-
-                return (
-                  <>
-                    <Link
-                      href="/auth/login"
-                      className="fm-navbar__link--auth"
-                    >
-                      Sign In
-                    </Link>
-                    <Button variant="primary" href="/auth/signup">
-                      Create Account
-                    </Button>
-                  </>
-                );
-              }}
-            </BrowserOnly>
+            {isAuthenticated ? (
+              <UserMenu />
+            ) : (
+              <>
+                <Link href="/auth/login" className="fm-navbar__link--auth">
+                  Sign In
+                </Link>
+                <Button variant="primary" href="/auth/signup">
+                  Create Account
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Mobile Menu Button */}
-        <div className="md:hidden flex items-center">
+        {/* Mobile toggle */}
+        <div className="fm-navbar__mobile-toggle">
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="fm-text-secondary hover:fm-text-primary focus:outline-none fm-text-2xl transition-all duration-200"
+            className="fm-text-secondary hover:fm-text-primary focus:outline-none transition-all duration-200 text-2xl"
             aria-label="Toggle menu"
+            aria-expanded={isMobileMenuOpen}
           >
             {isMobileMenuOpen ? (
               <span className="fm-text-accent-primary">✕</span>
@@ -151,46 +126,30 @@ const FuturisticNavbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="md:hidden fm-bg-secondary border-t border-fm-text-tertiary/20"
+            transition={{ duration: 0.25 }}
+            className="fm-navbar__mobile-menu"
           >
-            <div className="px-4 py-4 space-y-4">
+            <div className="fm-navbar__mobile-menu-inner">
               {navLinks.map((link) => {
                 const isAnchorLink = link.href.startsWith('#');
-                const isActiveLink = isActive(link.href);
-
+                const active = isActive(link.href);
                 return (
                   <Link
                     key={link.name}
                     href={link.href}
-                    className={`block py-3 text-fm-text-secondary hover:text-fm-accent-primary rounded-lg transition-all duration-200 ${isActiveLink ? 'text-fm-accent-primary' : ''}`}
+                    className={active ? 'fm-navbar__link-mobile fm-navbar__link-mobile--active' : 'fm-navbar__link-mobile'}
                     onClick={(e) => {
                       if (isAnchorLink && location.pathname === '/') {
                         e.preventDefault();
-                        try {
-                          const targetElement = document.querySelector(link.href);
-                          if (targetElement) {
-                            const elementPosition = targetElement.getBoundingClientRect().top;
-                            const offsetPosition = elementPosition + window.pageYOffset - 100; // Account for fixed navbar
-                            window.scrollTo({
-                              top: offsetPosition,
-                              behavior: 'smooth'
-                            });
-                          }
-                        } catch (error) {
-                          console.warn('Error scrolling to element:', error);
-                          // Fallback to regular navigation if smooth scrolling fails
-                          window.location.hash = link.href;
-                        }
+                        scrollToSection(link.href);
                       }
-                      // Close mobile menu after any click
                       setIsMobileMenuOpen(false);
                     }}
                   >
@@ -198,52 +157,72 @@ const FuturisticNavbar = () => {
                   </Link>
                 );
               })}
-              <div className="pt-4 border-t border-fm-text-tertiary/20">
-                <BrowserOnly fallback={<div>Loading...</div>}>
-                  {() => {
-                    const { isAuthenticated, signOut, user } = useAuth();
 
-                    if (isAuthenticated) {
-                      return (
-                        <div className="flex flex-col space-y-3">
-                          <div className="text-fm-text-secondary text-center py-2">
-                            {user?.name || user?.email}
-                          </div>
-                          <Button
-                            variant="secondary"
-                            onClick={async () => {
-                              await signOut();
-                              setIsMobileMenuOpen(false);
-                            }}
-                            className="w-full"
-                          >
-                            Sign Out
-                          </Button>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="flex flex-col space-y-3">
-                        <Link
-                          href="/auth/login"
-                          className="text-fm-text-secondary hover:text-fm-accent-primary text-center py-2 transition-all duration-200"
-                        >
-                          Sign In
-                        </Link>
-                        <Button variant="primary" href="/auth/signup" className="w-full">
-                          Create Account
-                        </Button>
-                      </div>
-                    );
-                  }}
-                </BrowserOnly>
+              <div className="fm-navbar__mobile-menu-auth">
+                {isAuthenticated ? (
+                  <div className="fm-navbar__mobile-auth-stack">
+                    <div className="fm-navbar__mobile-user">
+                      {user?.name || user?.email}
+                    </div>
+                    <Button
+                      variant="secondary"
+                      onClick={async () => {
+                        await signOut();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full"
+                    >
+                      Sign Out
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="fm-navbar__mobile-auth-stack">
+                    <Link
+                      href="/auth/login"
+                      className="fm-navbar__mobile-auth-link"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Sign In
+                    </Link>
+                    <Button
+                      variant="primary"
+                      href="/auth/signup"
+                      className="w-full"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Create Account
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
     </motion.nav>
+  );
+}
+
+/**
+ * FuturisticNavbar — server-safe shell.
+ * Renders a static placeholder during SSR, real navbar on client.
+ */
+const FuturisticNavbar = () => {
+  return (
+    <BrowserOnly
+      fallback={
+        <nav className="fm-navbar navbar navbar--fixed-top" id="navbar">
+          <div className="fm-navbar__container">
+            <span className="fm-navbar__logo">
+              <span className="fm-navbar__logo-text">PhysicalAI</span>
+              <span className="fm-text-tertiary">.io</span>
+            </span>
+          </div>
+        </nav>
+      }
+    >
+      {() => <FuturisticNavbarInner />}
+    </BrowserOnly>
   );
 };
 

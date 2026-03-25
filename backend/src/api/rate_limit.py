@@ -43,6 +43,13 @@ async def check_rate_limit(request: Request):
 
     # Check rate limit (1-hour sliding window)
     session_uuid = UUID(session_id)
+
+    # Ensure the session exists before recording (prevents FK violation)
+    try:
+        await neon_client.create_or_update_session(session_uuid)
+    except Exception:
+        pass
+
     is_allowed = await neon_client.check_rate_limit(session_uuid, max_queries=20)
 
     if not is_allowed:
@@ -78,6 +85,13 @@ async def check_rate_limit_for_session(session_id: str, neon_client=None):
         neon_client = await get_neon_client()
 
     session_uuid = UUID(session_id)
+
+    # Ensure the session exists before checking rate limits (prevents FK violation)
+    try:
+        await neon_client.create_or_update_session(session_uuid)
+    except Exception:
+        pass  # Best-effort; if DB is down, let rate-limit check handle it
+
     is_allowed = await neon_client.check_rate_limit(session_uuid, max_queries=settings.RATE_LIMIT_MAX_QUERIES)
 
     if not is_allowed:

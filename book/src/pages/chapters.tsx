@@ -92,7 +92,7 @@ const ChaptersPage = () => {
   const { siteConfig } = useDocusaurusContext();
 
   // Chapter data - based off the documentation structure from sidebars.js
-  const allChapters = [
+  const allChapters: Omit<ChapterCardProps, 'index'>[] = [
     {
       title: 'Getting Started',
       description: 'Introduction to the Physical AI & Humanoid Robotics platform and curriculum overview.',

@@ -8,22 +8,22 @@ and keeps technical terms in English.
 Author: Physical AI Platform Team
 Date: 2026-02-16
 """
-from openai import AsyncOpenAI
-
 from ..config import get_settings
+from ..ai.gemini_client import get_gemini_client
+from google.genai import types as genai_types
 
 
 class ContentTranslator:
     """
-    Translates chapter content to Urdu using OpenAI gpt-4o-mini.
+    Translates chapter content to Urdu using Gemini.
 
     Preserves all Markdown formatting, code blocks, and technical terms.
     """
 
     def __init__(self):
         self.settings = get_settings()
-        self.client = AsyncOpenAI(api_key=self.settings.OPENAI_API_KEY)
-        self.model = "gpt-4o-mini"
+        self.client = get_gemini_client()
+        self.model = self.settings.OPENAI_CHAT_MODEL
 
         self.system_prompt = """You are an expert translator specializing in translating technical educational content from English to Urdu.
 
@@ -66,17 +66,20 @@ CRITICAL: Your output must be ONLY the translated chapter content. No meta-comme
             f"{chapter_content}"
         )
 
-        response = await self.client.chat.completions.create(
+        response = await self.client.aio.models.generate_content(
             model=self.model,
-            messages=[
-                {"role": "system", "content": self.system_prompt},
-                {"role": "user", "content": user_message},
-            ],
-            temperature=0.3,
-            max_tokens=16000,
+            contents=[genai_types.Content(
+                role="user",
+                parts=[genai_types.Part(text=user_message)]
+            )],
+            config=genai_types.GenerateContentConfig(
+                temperature=0.3,
+                max_output_tokens=16000,
+                system_instruction=self.system_prompt,
+            ),
         )
 
-        content = response.choices[0].message.content
+        content = response.text
         if not content:
             raise RuntimeError("Empty AI response from translation")
         return content

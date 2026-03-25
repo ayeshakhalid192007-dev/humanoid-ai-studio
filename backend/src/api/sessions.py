@@ -210,7 +210,7 @@ async def get_session_history(
 
         return SessionHistoryResponse(
             session_id=session_id,
-            user_id=session.get("metadata", {}).get("user_id"),
+            user_id=(session.get("metadata") if isinstance(session.get("metadata"), dict) else {}).get("user_id"),
             created_at=session["created_at"],
             last_active_at=session["last_active_at"],
             turn_count=len(turns),

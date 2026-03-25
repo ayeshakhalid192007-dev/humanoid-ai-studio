@@ -7,7 +7,8 @@ from ...services.chapter_retriever import ChapterRetriever
 from ..prompts.registry import PromptRegistry
 from ...db.neon_client import NeonClient, get_neon_client
 from ...config import get_settings
-from ..clients import get_openai_client
+from ..gemini_client import get_gemini_client
+from google.genai import types as genai_types
 
 
 class PersonalizationAgent(BaseAgent):
@@ -78,8 +79,8 @@ class PersonalizationAgent(BaseAgent):
             chapter_data = await self.chapter_retriever.get_chapter_content(request.chapter_slug)
             if not chapter_data:
                 raise ValueError(f"Chapter not found: {request.chapter_slug}")
-            content_to_process = chapter_data["markdown"]
-            content_version = chapter_data.get("version", "")
+            content_to_process = chapter_data.get("content", chapter_data.get("markdown", ""))
+            content_version = chapter_data.get("content_version", chapter_data.get("version", ""))
         elif hasattr(request, 'content_version'):
             content_version = request.content_version
 
@@ -105,25 +106,40 @@ class PersonalizationAgent(BaseAgent):
                 temperature = template.temperature
                 max_tokens = template.max_tokens
 
-        # Get AI client and make the API call
+        # Get AI client and make the API call using native Gemini SDK
         try:
-            client = await get_openai_client(self.model)
-            response = await client.chat_completion(
-                messages=messages,
-                model=self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else self.model,
+            client = get_gemini_client()
+            model_name = self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else "gemini-2.5-flash"
+            system_instruction = ""
+            contents = []
+            for msg in messages:
+                if msg["role"] == "system":
+                    system_instruction = msg["content"]
+                elif msg["role"] == "user":
+                    contents.append(genai_types.Content(
+                        role="user",
+                        parts=[genai_types.Part(text=msg["content"])]
+                    ))
+            gen_config = genai_types.GenerateContentConfig(
                 temperature=temperature,
-                max_tokens=max_tokens,
+                max_output_tokens=max_tokens,
+                system_instruction=system_instruction or None,
             )
-
-            # Extract response details from the cached/completed response
-            personalized_content = response['choices'][0]['message']['content'] or ""
-            token_count = response['usage']['total_tokens'] if response.get('usage') else 0
-            model = response['model'] if response.get('model') else "gpt-4o-mini"
+            response = await client.aio.models.generate_content(
+                model=model_name,
+                contents=contents,
+                config=gen_config,
+            )
+            personalized_content = response.text or ""
+            token_count = 0
+            if hasattr(response, 'usage_metadata') and response.usage_metadata:
+                token_count = getattr(response.usage_metadata, 'total_token_count', 0) or 0
+            model = model_name
         except Exception as e:
             # Handle API errors gracefully
             personalized_content = f"I encountered an issue processing your request: {str(e)}"
             token_count = 0
-            model = "gpt-4o-mini"
+            model = self.settings.OPENAI_CHAT_MODEL or "gemini-2.5-flash"
 
         # Cache the result if we have the necessary components
         if (request.user_id and request.chapter_slug and self.neon_client and

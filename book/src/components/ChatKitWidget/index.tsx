@@ -15,8 +15,9 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { BrowserOnly } from '@docusaurus/core/lib/client/contexts/skipRedirect';
-import { useAuth } from '../Auth/AuthContext'; // Adjust path to your AuthContext
+import BrowserOnly from '@docusaurus/BrowserOnly';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import { useAuth } from '../../context/AuthContext';
 import styles from './ChatkitWidget.module.css';
 
 export interface ChatKitProps {
@@ -43,6 +44,8 @@ export interface Thread {
 }
 
 const ChatKitWidget: React.FC<ChatKitProps> = ({ pageContext, initialExpanded = false }) => {
+  const { siteConfig } = useDocusaurusContext();
+  const backendUrl: string = (siteConfig.customFields?.backendUrl as string) || 'http://localhost:8000';
   const [isOpen, setIsOpen] = useState(initialExpanded);
   const [isMinimized, setIsMinimized] = useState(!initialExpanded);
   const [threadId, setThreadId] = useState<string | null>(null);
@@ -94,7 +97,7 @@ const ChatKitWidget: React.FC<ChatKitProps> = ({ pageContext, initialExpanded = 
 
       try {
         // Create or get thread from backend
-        const response = await fetch('/api/chatkit/threads', {
+        const response = await fetch(`${backendUrl}/api/chatkit/threads`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -140,7 +143,7 @@ const ChatKitWidget: React.FC<ChatKitProps> = ({ pageContext, initialExpanded = 
   // Load thread messages
   const loadThreadMessages = async (threadId: string) => {
     try {
-      const response = await fetch(`/api/chatkit/threads/${threadId}/messages`, {
+      const response = await fetch(`${backendUrl}/api/chatkit/threads/${threadId}/messages`, {
         headers: {
           'Content-Type': 'application/json',
           ...(isAuthenticated ? {
@@ -211,7 +214,7 @@ const ChatKitWidget: React.FC<ChatKitProps> = ({ pageContext, initialExpanded = 
     setSelectedText('');
 
     try {
-      const response = await fetch(`/api/chatkit/threads/${threadId}/messages`, {
+      const response = await fetch(`${backendUrl}/api/chatkit/threads/${threadId}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -283,7 +286,7 @@ const ChatKitWidget: React.FC<ChatKitProps> = ({ pageContext, initialExpanded = 
                     break;
                   }
                   else if (data.type === 'error') {
-                    throw new Error(data.message || 'Error occurred while streaming response');
+                    throw new Error(data.content || data.data?.message || data.message || 'Error occurred while streaming response');
                   }
                 } catch (parseError) {
                   console.error('Error parsing message data:', parseError);
@@ -422,7 +425,7 @@ const ChatKitWidget: React.FC<ChatKitProps> = ({ pageContext, initialExpanded = 
       {isMinimized && !isOpen && (
         <div
           className={styles.minimizedButton}
-          onClick={() => setIsMinimized(false)}
+          onClick={() => { setIsMinimized(false); setIsOpen(true); }}
           title="Open Chat"
         >
           💬
