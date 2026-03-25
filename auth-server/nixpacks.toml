@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["nodejs_18"]
+nixPkgs = ["nodejs_20"]
 
 [start]
-cmd = "node --experimental-global-webcrypto src/index.js"
+cmd = "node src/index.js"
