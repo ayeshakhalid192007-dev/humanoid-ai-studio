@@ -1,7 +1,8 @@
 name: Deploy Backend to Railway (Production)
 
-# Uses Railway's official GitHub Action — no RAILWAY_TOKEN needed.
-# Railway deploys ONLY after backend tests pass.
+# Deploys FastAPI backend via Railway Deploy Hook after tests pass.
+# Setup: Railway dashboard → backend service → Settings → Generate Deploy Hook
+# Add the URL as GitHub secret: RAILWAY_BACKEND_DEPLOY_HOOK
 
 on:
   push:
@@ -43,7 +44,7 @@ jobs:
         continue-on-error: true
 
   # ─────────────────────────────────────────
-  # Deploy to Railway via official action
+  # Deploy via Railway Deploy Hook
   # ─────────────────────────────────────────
   deploy:
     name: Deploy to Railway (production)
@@ -54,16 +55,16 @@ jobs:
       url: ${{ vars.RAILWAY_BACKEND_URL }}
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy backend to Railway
-        uses: railwayapp/railway-deploy@v1
-        with:
-          railway-token: ${{ secrets.RAILWAY_TOKEN }}
-          service: ${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}
-          detach: true
+      - name: Trigger Railway deploy
+        run: |
+          curl -s -X POST "${{ secrets.RAILWAY_BACKEND_DEPLOY_HOOK }}" \
+            -H "Content-Type: application/json" \
+            --fail \
+            -o /dev/null \
+            -w "HTTP status: %{http_code}\n"
 
       - name: Deployment summary
         run: |
-          echo "✅ Backend deployed to Railway production"
+          echo "✅ Railway deploy triggered for backend"
           echo "URL: ${{ vars.RAILWAY_BACKEND_URL }}"
+          echo "Monitor at: https://railway.app/project/80b5195c-adeb-47c7-a3b8-6a1c12ff0472"
