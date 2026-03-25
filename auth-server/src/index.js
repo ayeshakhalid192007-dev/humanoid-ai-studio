@@ -5,9 +5,13 @@
  * Custom endpoints for user profile/onboarding.
  */
 
-// Polyfill Web Crypto for Node.js < 18 (required by Better Auth OIDC)
-import { webcrypto } from "crypto";
-if (!globalThis.crypto) globalThis.crypto = webcrypto;
+// Polyfill Web Crypto for Node.js < 19 (required by Better Auth OIDC cookie signing)
+import nodeCrypto from "crypto";
+if (!globalThis.crypto) {
+  globalThis.crypto = nodeCrypto.webcrypto;
+}
+// Diagnostic: log crypto status at startup
+console.log(`[startup] Node.js ${process.version} | globalThis.crypto: ${!!globalThis.crypto} | subtle: ${!!globalThis.crypto?.subtle}`);
 
 import express from "express";
 import cors from "cors";
