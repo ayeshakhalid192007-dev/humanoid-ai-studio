@@ -5,6 +5,10 @@
  * Custom endpoints for user profile/onboarding.
  */
 
+// Polyfill Web Crypto for Node.js < 18 (required by Better Auth OIDC)
+import { webcrypto } from "crypto";
+if (!globalThis.crypto) globalThis.crypto = webcrypto;
+
 import express from "express";
 import cors from "cors";
 import pkg from "pg";
