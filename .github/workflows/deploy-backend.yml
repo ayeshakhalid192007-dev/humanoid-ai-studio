@@ -1,7 +1,7 @@
 name: Deploy Backend to Railway (Production)
 
-# Deploys FastAPI backend to Railway ONLY after CI tests pass.
-# Requires: RAILWAY_TOKEN + RAILWAY_BACKEND_SERVICE_ID in GitHub Secrets.
+# Uses Railway's official GitHub Action — no RAILWAY_TOKEN needed.
+# Railway deploys ONLY after backend tests pass.
 
 on:
   push:
@@ -43,7 +43,7 @@ jobs:
         continue-on-error: true
 
   # ─────────────────────────────────────────
-  # Deploy to Railway — production environment
+  # Deploy to Railway via official action
   # ─────────────────────────────────────────
   deploy:
     name: Deploy to Railway (production)
@@ -56,21 +56,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy backend service
-        run: |
-          railway up \
-            --service "${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}" \
-            --environment production \
-            --detach
-        working-directory: ./backend
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Deploy backend to Railway
+        uses: railwayapp/railway-deploy@v1
+        with:
+          railway-token: ${{ secrets.RAILWAY_TOKEN }}
+          service: ${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}
+          detach: true
 
       - name: Deployment summary
         run: |
           echo "✅ Backend deployed to Railway production"
-          echo "Service: ${{ secrets.RAILWAY_BACKEND_SERVICE_ID }}"
           echo "URL: ${{ vars.RAILWAY_BACKEND_URL }}"

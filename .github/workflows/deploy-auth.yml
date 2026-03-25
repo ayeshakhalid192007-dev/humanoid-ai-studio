@@ -1,7 +1,7 @@
 name: Deploy Auth Server to Railway (Production)
 
-# Deploys Express + Better Auth server to Railway ONLY when auth-server/ changes.
-# Requires: RAILWAY_TOKEN + RAILWAY_AUTH_SERVICE_ID in GitHub Secrets.
+# Uses Railway's official GitHub Action — no RAILWAY_TOKEN needed.
+# Deploys only when auth-server/ changes.
 
 on:
   push:
@@ -33,7 +33,7 @@ jobs:
         continue-on-error: true
 
   # ─────────────────────────────────────────
-  # Deploy to Railway — production environment
+  # Deploy to Railway via official action
   # ─────────────────────────────────────────
   deploy:
     name: Deploy to Railway (production)
@@ -46,21 +46,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy auth-server service
-        run: |
-          railway up \
-            --service "${{ secrets.RAILWAY_AUTH_SERVICE_ID }}" \
-            --environment production \
-            --detach
-        working-directory: ./auth-server
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Deploy auth-server to Railway
+        uses: railwayapp/railway-deploy@v1
+        with:
+          railway-token: ${{ secrets.RAILWAY_TOKEN }}
+          service: ${{ secrets.RAILWAY_AUTH_SERVICE_ID }}
+          detach: true
 
       - name: Deployment summary
         run: |
           echo "✅ Auth server deployed to Railway production"
-          echo "Service: ${{ secrets.RAILWAY_AUTH_SERVICE_ID }}"
           echo "URL: ${{ vars.RAILWAY_AUTH_URL }}"
