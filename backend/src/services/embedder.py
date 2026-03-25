@@ -1,56 +1,65 @@
 """
-Embedder Service - OpenAI Embedding Generation
+Embedder Service - Local Sentence-Transformers Embedding
 
-Generates embeddings using OpenAI text-embedding-3-small model.
-Supports batch processing for efficient curriculum content embedding.
+Generates embeddings using sentence-transformers all-MiniLM-L6-v2.
+Runs fully locally — no API key required, completely free.
+Model downloads automatically from HuggingFace on first use (~80MB).
 
-Author: Physical AI Platform Team
-Date: 2026-02-09
+Output: 384-dimensional float vectors
 """
 import asyncio
 from typing import List, Dict, Any
-import openai
-from openai import AsyncOpenAI
+from functools import lru_cache
 
-from ..config import get_settings
+try:
+    from sentence_transformers import SentenceTransformer as _SentenceTransformer
+except ImportError:
+    _SentenceTransformer = None  # type: ignore
+
+SentenceTransformer = _SentenceTransformer
+
+
+@lru_cache(maxsize=1)
+def _load_model():
+    """Load model once and cache it (singleton)."""
+    if SentenceTransformer is None:
+        raise RuntimeError("sentence-transformers not installed. Run: pip install sentence-transformers")
+    return SentenceTransformer("all-MiniLM-L6-v2")
 
 
 class Embedder:
     """
-    Handles text embedding generation using OpenAI API.
+    Handles text embedding using local sentence-transformers model.
 
     Features:
-    - Batch processing (50 chunks per batch)
-    - Async API calls for performance
-    - Error handling and retries
+    - No API key required
+    - Model cached in memory after first load
+    - Async-safe via thread pool executor
+    - 384-dimensional output (matches Qdrant VECTOR_SIZE=384)
     """
 
     def __init__(self):
-        self.settings = get_settings()
-        self.client = AsyncOpenAI(api_key=self.settings.OPENAI_API_KEY)
-        self.model = "text-embedding-3-small"
-        self.dimensions = 1536
-        self.batch_size = 50
+        self.model_name = "all-MiniLM-L6-v2"
+        self.dimensions = 384
+        self.batch_size = 64
+
+    def _get_model(self) -> SentenceTransformer:
+        return _load_model()
 
     async def embed_text(self, text: str) -> List[float]:
         """
         Generate embedding for a single text string.
 
         Args:
-            text: Text to embed (max ~8k tokens)
+            text: Text to embed
 
         Returns:
-            List of 1536 float values representing the embedding
+            List of 384 float values representing the embedding
         """
-        try:
-            response = await self.client.embeddings.create(
-                model=self.model,
-                input=text,
-                encoding_format="float"
-            )
-            return response.data[0].embedding
-        except Exception as e:
-            raise RuntimeError(f"Embedding generation failed: {str(e)}")
+        loop = asyncio.get_running_loop()
+        model = self._get_model()
+        embedding = await loop.run_in_executor(None, model.encode, text)
+        return embedding.tolist()
 
     async def embed_batch(self, texts: List[str]) -> List[List[float]]:
         """
@@ -60,27 +69,19 @@ class Embedder:
             texts: List of text strings to embed
 
         Returns:
-            List of embedding vectors
+            List of embedding vectors (each 384 floats)
         """
         if not texts:
             return []
 
-        # Split into batches of 50 (API limit)
-        embeddings = []
-        for i in range(0, len(texts), self.batch_size):
-            batch = texts[i:i + self.batch_size]
-            try:
-                response = await self.client.embeddings.create(
-                    model=self.model,
-                    input=batch,
-                    encoding_format="float"
-                )
-                batch_embeddings = [item.embedding for item in response.data]
-                embeddings.extend(batch_embeddings)
-            except Exception as e:
-                raise RuntimeError(f"Batch embedding failed at index {i}: {str(e)}")
+        loop = asyncio.get_running_loop()
+        model = self._get_model()
 
-        return embeddings
+        def _encode_batch():
+            return model.encode(texts, batch_size=self.batch_size, show_progress_bar=False)
+
+        embeddings = await loop.run_in_executor(None, _encode_batch)
+        return [e.tolist() for e in embeddings]
 
     async def embed_curriculum_chunks(
         self,
@@ -98,7 +99,6 @@ class Embedder:
         texts = [chunk["text"] for chunk in chunks]
         embeddings = await self.embed_batch(texts)
 
-        # Add embeddings to chunks
         for chunk, embedding in zip(chunks, embeddings):
             chunk["embedding"] = embedding
 

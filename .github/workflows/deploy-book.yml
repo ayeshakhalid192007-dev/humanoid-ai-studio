@@ -44,6 +44,10 @@ jobs:
 
       - name: Build Docusaurus site
         run: npm run build
+        env:
+          BACKEND_URL: ${{ vars.RAILWAY_BACKEND_URL }}
+          AUTH_API_URL: ${{ vars.RAILWAY_AUTH_URL }}
+          OAUTH_REDIRECT_URI: https://ayeshakhalid192007-dev.github.io/humanoid-ai-studio/auth/callback
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

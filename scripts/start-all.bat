@@ -12,8 +12,8 @@ set PROJECT_ROOT=%~dp0..
 echo Starting services in separate windows...
 echo.
 
-REM Start Auth Server (Port 3001)
-echo [1/3] Starting Auth Server (port 3001)...
+REM Start Auth Server (Port 3002)
+echo [1/3] Starting Auth Server (port 3002)...
 cd /d "%PROJECT_ROOT%\auth-server"
 if not exist "node_modules" (
     echo   Installing auth server dependencies...
@@ -46,7 +46,7 @@ echo ========================================
 echo.
 echo Services:
 echo   - Frontend:    http://localhost:3000
-echo   - Auth Server: http://localhost:3001
+echo   - Auth Server: http://localhost:3002
 echo   - Backend API: http://localhost:8000
 echo.
 echo Close each terminal window to stop services.

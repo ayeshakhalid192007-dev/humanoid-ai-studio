@@ -22,10 +22,8 @@ async function createProfilesTable() {
       CREATE TABLE IF NOT EXISTS user_profiles (
         id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
         user_id TEXT UNIQUE NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
-        software_background TEXT NOT NULL DEFAULT 'none'
-          CHECK (software_background IN ('none', 'beginner', 'intermediate', 'advanced')),
-        hardware_background TEXT NOT NULL DEFAULT 'none'
-          CHECK (hardware_background IN ('none', 'beginner', 'intermediate', 'advanced')),
+        software_background TEXT NOT NULL DEFAULT '',
+        hardware_background TEXT NOT NULL DEFAULT '',
         robotics_knowledge TEXT NOT NULL DEFAULT 'none'
           CHECK (robotics_knowledge IN ('none', 'beginner', 'intermediate', 'advanced')),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

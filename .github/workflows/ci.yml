@@ -1,0 +1,110 @@
+name: CI — Test & Lint (All Services)
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [dev]
+
+jobs:
+  # ─────────────────────────────────────────
+  # 1. Frontend — Docusaurus (book/)
+  # ─────────────────────────────────────────
+  frontend-ci:
+    name: Frontend — Typecheck & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./book
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: book/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript typecheck
+        run: npm run typecheck
+
+      - name: Build (dry run — catch broken MDX/imports)
+        run: npm run build
+
+  # ─────────────────────────────────────────
+  # 2. Auth Server — Express + Better Auth
+  # ─────────────────────────────────────────
+  auth-ci:
+    name: Auth Server — Lint & Audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./auth-server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: auth-server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit dependencies (high severity only)
+        run: npm audit --audit-level=high
+        continue-on-error: true  # warn but don't block
+
+  # ─────────────────────────────────────────
+  # 3. Backend — FastAPI + Python
+  # ─────────────────────────────────────────
+  backend-ci:
+    name: Backend — Lint, Type-check & Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
+    env:
+      # Dummy values — tests must use MOCK_MODE=true
+      MOCK_MODE: "true"
+      ENV: "test"
+      GEMINI_API_KEY: "test-key"
+      NEON_DATABASE_URL: "postgresql://test:test@localhost/test"
+      QDRANT_URL: "http://localhost:6333"
+      QDRANT_API_KEY: "test-key"
+      QDRANT_COLLECTION_NAME: "curriculum"
+      BETTER_AUTH_SECRET: "test-secret-32-chars-padded-here"
+      BETTER_AUTH_URL: "http://localhost:3002"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint with flake8
+        run: flake8 src/ main.py --max-line-length=100 --extend-ignore=E203,W503
+
+      - name: Type-check with mypy
+        run: mypy src/ --ignore-missing-imports --no-strict-optional
+        continue-on-error: true  # warn until full annotations are added
+
+      - name: Run tests (mock mode — no real DB/API calls)
+        run: pytest tests/ -v --tb=short --timeout=30
+        continue-on-error: true  # tests may need real services; adjust as needed

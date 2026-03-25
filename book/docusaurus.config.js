@@ -13,7 +13,7 @@ const config = {
 
   // Set the production url of your site here
   url: 'https://ayeshakhalid192007-dev.github.io',
-  baseUrl: '/humanoid-ai-studio/',
+  baseUrl: process.env.BASE_URL || '/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
@@ -24,8 +24,10 @@ const config = {
   onBrokenMarkdownLinks: 'warn',
 
   customFields: {
-    backendUrl: process.env.BACKEND_URL || 'http://localhost:8000',
-    authApiUrl: process.env.AUTH_API_URL || 'http://localhost:3002',
+    backendUrl: process.env.BACKEND_URL || 'https://backend-production-52d2.up.railway.app',
+    authApiUrl: process.env.AUTH_API_URL || 'https://auth-server-production-21f2.up.railway.app',
+    oauthClientId: process.env.OAUTH_CLIENT_ID || 'physical-ai-book',
+    oauthRedirectUri: process.env.OAUTH_REDIRECT_URI || 'https://ayeshakhalid192007-dev.github.io/humanoid-ai-studio/auth/callback',
   },
 
   // Even if you don't use internalization, you can use this field to set useful

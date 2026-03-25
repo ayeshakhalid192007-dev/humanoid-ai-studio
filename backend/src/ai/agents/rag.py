@@ -9,9 +9,8 @@ from ...services.chapter_retriever import ChapterRetriever
 from ..prompts.registry import PromptRegistry
 from ...db.neon_client import NeonClient, get_neon_client
 from ...config import get_settings
-import hashlib
-from ..clients import get_openai_client
 from ..gemini_client import get_gemini_client
+from google.genai import types as genai_types
 
 
 class RAGReasoningAgent(BaseAgent):
@@ -66,8 +65,9 @@ class RAGReasoningAgent(BaseAgent):
             citations = ["Selected text provided by user"]
         else:
             # Use full book mode - retrieve from vector store
-            retrieved_chunks = await self.retriever.retrieve(query, limit=5)
-            retrieved_context = "\n\n".join([chunk.get("content", "") for chunk in retrieved_chunks])
+            query_embedding = await self.embedder.embed_text(query)
+            retrieved_chunks = await self.retriever.search(query_embedding, limit=5)
+            retrieved_context = "\n\n".join([chunk.get("text", chunk.get("content", "")) for chunk in retrieved_chunks])
             citations = [f"Module {chunk.get('module', 'Unknown')}, Lesson {chunk.get('lesson', 'Unknown')}"
                         for chunk in retrieved_chunks]
 
@@ -89,24 +89,48 @@ class RAGReasoningAgent(BaseAgent):
                 temperature = template.temperature
                 max_tokens = template.max_tokens
 
-        # Get AI client and make the API call
+        # Get AI client and make the API call using native Gemini SDK
         try:
-            client = await get_openai_client(self.settings.OPENAI_CHAT_MODEL or self.model)
-            response = await client.chat_completion(
-                messages=messages,
+            client = get_gemini_client()
+            # Build google-genai contents from messages list
+            system_instruction = ""
+            contents = []
+            for msg in messages:
+                if msg["role"] == "system":
+                    system_instruction = msg["content"]
+                elif msg["role"] == "user":
+                    contents.append(genai_types.Content(
+                        role="user",
+                        parts=[genai_types.Part(text=msg["content"])]
+                    ))
+                elif msg["role"] == "assistant":
+                    contents.append(genai_types.Content(
+                        role="model",
+                        parts=[genai_types.Part(text=msg["content"])]
+                    ))
+
+            model_name = self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else self.model
+            gen_config = genai_types.GenerateContentConfig(
                 temperature=temperature,
-                max_tokens=max_tokens,
+                max_output_tokens=max_tokens,
+                system_instruction=system_instruction or None,
+            )
+            response = await client.aio.models.generate_content(
+                model=model_name,
+                contents=contents,
+                config=gen_config,
             )
 
-            # Extract response details from the cached/completed response
-            answer = response['choices'][0]['message']['content'] or ""
-            token_count = response['usage']['total_tokens'] if response.get('usage') else 0
-            model = response['model'] if response.get('model') else "gpt-4o-mini"
+            answer = response.text or ""
+            token_count = 0
+            if hasattr(response, 'usage_metadata') and response.usage_metadata:
+                token_count = getattr(response.usage_metadata, 'total_token_count', 0) or 0
+            model = model_name
         except Exception as e:
             # Handle API errors gracefully
             answer = f"I encountered an issue processing your request: {str(e)}"
             token_count = 0
-            model = "gpt-4o-mini"
+            model = self.settings.OPENAI_CHAT_MODEL or self.model
 
         # Calculate token usage (rough estimation if not provided by API)
         if token_count == 0:
@@ -164,8 +188,9 @@ class RAGReasoningAgent(BaseAgent):
             citations = ["Selected text provided by user"]
         else:
             # Use full book mode - retrieve from vector store
-            retrieved_chunks = await self.retriever.retrieve(query, limit=5)
-            retrieved_context = "\n\n".join([chunk.get("content", "") for chunk in retrieved_chunks])
+            query_embedding = await self.embedder.embed_text(query)
+            retrieved_chunks = await self.retriever.search(query_embedding, limit=5)
+            retrieved_context = "\n\n".join([chunk.get("text", chunk.get("content", "")) for chunk in retrieved_chunks])
             citations = [f"Module {chunk.get('module', 'Unknown')}, Lesson {chunk.get('lesson', 'Unknown')}"
                         for chunk in retrieved_chunks]
 
@@ -189,18 +214,38 @@ class RAGReasoningAgent(BaseAgent):
 
         client = get_gemini_client()
         try:
-            stream = await client.chat.completions.create(
-                model=self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else self.model,
-                messages=messages,
+            # Build google-genai contents from messages list
+            system_instruction = ""
+            contents = []
+            for msg in messages:
+                if msg["role"] == "system":
+                    system_instruction = msg["content"]
+                elif msg["role"] == "user":
+                    contents.append(genai_types.Content(
+                        role="user",
+                        parts=[genai_types.Part(text=msg["content"])]
+                    ))
+                elif msg["role"] == "assistant":
+                    contents.append(genai_types.Content(
+                        role="model",
+                        parts=[genai_types.Part(text=msg["content"])]
+                    ))
+
+            stream_config = genai_types.GenerateContentConfig(
                 temperature=temperature,
-                max_tokens=max_tokens,
-                stream=True
+                max_output_tokens=max_tokens,
+                system_instruction=system_instruction or None,
             )
 
-            async for chunk in stream:
-                content = chunk.choices[0].delta.content
-                if content:
-                    yield content
+            model_name = self.settings.OPENAI_CHAT_MODEL if self.settings.OPENAI_CHAT_MODEL else self.model
+            async for chunk in await client.aio.models.generate_content_stream(
+                model=model_name,
+                contents=contents,
+                config=stream_config,
+            ):
+                text = chunk.text or ""
+                if text:
+                    yield text
         except Exception as e:
             # Handle API errors gracefully
             yield f"Error: {str(e)}"

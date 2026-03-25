@@ -162,7 +162,6 @@ async def get_ai_client_factory() -> AIClientFactory:
         settings = get_settings()
         _factory_instance = AIClientFactory(
             api_key=settings.GEMINI_API_KEY,
-            base_url=settings.GEMINI_BASE_URL,
         )
     return _factory_instance
 

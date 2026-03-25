@@ -18,6 +18,7 @@ import styles from './styles.module.css';
 import SuggestedQuestions from './SuggestedQuestions';
 import { useAuth } from '../../context/AuthContext';
 import { AuthModal } from '../Auth/AuthModal';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -32,12 +33,12 @@ interface Citation {
   section: string;
   url: string;
 }
-
-const BACKEND_URL = 'http://localhost:8000';
 const SESSION_STORAGE_KEY = 'chatbot_conversation';
 const SESSION_ID_KEY = 'chatbot_session_id';
 
 export default function ChatbotWidget(): JSX.Element {
+  const { siteConfig } = useDocusaurusContext();
+  const BACKEND_URL = (siteConfig.customFields?.backendUrl as string) || 'https://backend-production-52d2.up.railway.app';
   const { isAuthenticated } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);

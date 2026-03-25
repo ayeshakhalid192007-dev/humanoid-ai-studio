@@ -13,6 +13,7 @@ import { toNodeHandler } from "better-auth/node";
 import { auth } from "./auth.js";
 import dotenv from "dotenv";
 import rateLimiter from "./utils/rate-limiter.js";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -20,22 +21,26 @@ const app = express();
 const PORT = process.env.PORT || 3002;
 
 const pool = new Pool({
-  connectionString: process.env.NEON_DATABASE_URL,
+  connectionString: process.env.DATABASE_URL || process.env.NEON_DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
 
 // Initialize rate limiter
 await rateLimiter.initialize();
 
-// CORS
-app.use(
-  cors({
-    origin: [
+// CORS — parse allowed origins from env var or fall back to localhost defaults
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim())
+  : [
       "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:3002",
       "http://127.0.0.1:3000",
-    ],
+    ];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
@@ -48,19 +53,24 @@ app.all("/api/auth/*", toNodeHandler(auth));
 // JSON parsing for custom routes below
 app.use(express.json());
 
-// --- Helper: parse session from cookie ---
+// --- Helper: resolve session from cookie OR Bearer token ---
 async function getSessionFromRequest(req) {
+  // 1. Try Bearer token first (OAuth clients)
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    try {
+      const session = await auth.api.getSession({
+        headers: new Headers({ authorization: authHeader }),
+      });
+      if (session?.user) return session;
+    } catch {
+      // fall through to cookie check
+    }
+  }
+
+  // 2. Fall back to cookie session (legacy / same-origin clients)
   const cookieHeader = req.headers.cookie;
   if (!cookieHeader) return null;
-
-  const cookies = {};
-  cookieHeader.split(";").forEach((cookie) => {
-    const [name, ...rest] = cookie.trim().split("=");
-    cookies[name] = decodeURIComponent(rest.join("="));
-  });
-
-  const sessionToken = cookies["physical-ai.session_token"];
-  if (!sessionToken) return null;
 
   try {
     const session = await auth.api.getSession({
@@ -186,6 +196,60 @@ app.get("/api/profile", async (req, res) => {
     res.json({ profile: result.rows[0] || null });
   } catch (error) {
     console.error("Profile fetch error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// --- Admin: register a new OAuth client ---
+app.post("/api/admin/clients/register", async (req, res) => {
+  try {
+    const session = await getSessionFromRequest(req);
+    if (!session?.user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    if (session.user.role !== "admin") {
+      return res.status(403).json({ error: "Forbidden — admin only" });
+    }
+
+    const { name, redirectUrls, clientType } = req.body;
+
+    if (!name || !Array.isArray(redirectUrls) || redirectUrls.length === 0) {
+      return res.status(400).json({ error: "name and redirectUrls[] are required" });
+    }
+
+    const isPublic = clientType !== "confidential";
+    const clientId = crypto.randomBytes(24).toString("base64url");
+    const clientSecret = isPublic ? null : crypto.randomBytes(32).toString("base64url");
+
+    const metadata = JSON.stringify({
+      token_endpoint_auth_method: isPublic ? "none" : "client_secret_post",
+      grant_types: ["authorization_code", "refresh_token"],
+    });
+
+    await pool.query(
+      `INSERT INTO "oauthApplication"
+         (id, name, icon, metadata, "clientId", "clientSecret", "redirectUrls", type, disabled, "userId", "createdAt", "updatedAt")
+       VALUES ($1, $2, NULL, $3, $4, $5, $6, $7, FALSE, NULL, NOW(), NOW())`,
+      [
+        crypto.randomUUID(),
+        name,
+        metadata,
+        clientId,
+        clientSecret,
+        redirectUrls.join(","),
+        isPublic ? "public" : "confidential",
+      ]
+    );
+
+    res.status(201).json({
+      client_id: clientId,
+      client_secret: clientSecret,
+      client_type: isPublic ? "public" : "confidential",
+      name,
+      redirect_uris: redirectUrls,
+    });
+  } catch (error) {
+    console.error("Client registration error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

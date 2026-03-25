@@ -19,8 +19,8 @@ const MotionWrapper: React.FC<MotionWrapperProps> = ({
   const animationVariants = {
     hidden: {
       opacity: 0,
-      y: variant === 'slide' && (direction === 'up' ? 20 : direction === 'down' ? -20 : 0),
-      x: variant === 'slide' && (direction === 'left' ? -20 : direction === 'right' ? 20 : 0),
+      y: variant === 'slide' ? (direction === 'up' ? 20 : direction === 'down' ? -20 : 0) : 0,
+      x: variant === 'slide' ? (direction === 'left' ? -20 : direction === 'right' ? 20 : 0) : 0,
     },
     visible: {
       opacity: 1,
