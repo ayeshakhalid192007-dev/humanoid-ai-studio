@@ -53,14 +53,14 @@ function ClientRouteGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export default function Root({ children }): JSX.Element {
+export default function Root({ children }: { children: React.ReactNode }): JSX.Element {
   return (
     <AuthProvider>
       {/* Render children immediately — no mount spinner blocking the page */}
       {children}
 
       {/* ChatbotWidget is client-only */}
-      <BrowserOnly fallback={null}>
+      <BrowserOnly fallback={<></>}>
         {() => (
           <>
             <ClientRouteGuard>{null}</ClientRouteGuard>

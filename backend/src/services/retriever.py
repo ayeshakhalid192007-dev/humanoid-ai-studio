@@ -43,7 +43,7 @@ class Retriever:
             api_key=self.settings.QDRANT_API_KEY
         )
         self.collection_name = "curriculum"
-        self.similarity_threshold = 0.7  # FR-039
+        self.similarity_threshold = 0.4  # all-MiniLM-L6-v2 scores 0.4-0.65 for relevant matches
         self.logger = get_logger(__name__)
         self.qdrant_wrapper = None  # Initialize lazily
 

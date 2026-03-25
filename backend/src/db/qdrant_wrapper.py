@@ -12,6 +12,8 @@ try:
     QDRANT_AVAILABLE = True
 except ImportError:
     QDRANT_AVAILABLE = False
+    QdrantClientSDK = None
+    ScoredPoint = None
 
 from .qdrant_client import QdrantClient
 from ..utils.circuit_breaker import CircuitBreaker

@@ -6,5 +6,6 @@
     "paths": {
       "@/*": ["./src/*"]
     }
-  }
+  },
+  "exclude": ["node_modules", "app", "**/__tests__/**/*", "**/*.test.ts", "**/*.test.tsx", "src/plugins/**/*"]
 }

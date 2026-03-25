@@ -90,13 +90,15 @@ async def ai_personalize(
         raise HTTPException(status_code=404, detail="Chapter not found")
 
     # Build payload for orchestrator
+    user_id = user.user_id if hasattr(user, 'user_id') else user.get("id")
+    user_profile = user.metadata if hasattr(user, 'metadata') and user.metadata else {}
     payload = {
         "request_type": "personalization",
         "chapter_slug": request.chapter_slug,
-        "content": chapter_data["markdown"],
-        "user_id": user.get("id"),
-        "user_profile": user.get("profile", {}),
-        "content_version": chapter_data.get("version", ""),
+        "content": chapter_data.get("content", chapter_data.get("markdown", "")),
+        "user_id": user_id,
+        "user_profile": user_profile,
+        "content_version": chapter_data.get("version", chapter_data.get("content_version", "")),
     }
 
     try:
@@ -160,7 +162,7 @@ async def ai_translate(
         payload = {
             "request_type": "translation",
             "chapter_slug": request.chapter_slug,
-            "content": chapter_data["markdown"],
+            "content": chapter_data.get("content", chapter_data.get("markdown", "")),
             "target_language": request.target_language,
             "content_version": chapter_data.get("version", ""),
         }
@@ -200,7 +202,7 @@ async def ai_chat(
         "mode": request.mode,
         "selected_text": request.selected_text,
         "session_id": request.session_id,
-        "user_id": user.get("id") if user else None,
+        "user_id": (user.user_id if hasattr(user, 'user_id') else user.get("id")) if user else None,
     }
 
     try:
@@ -241,7 +243,7 @@ async def ai_chat_stream(
         "mode": request.mode,
         "selected_text": request.selected_text,
         "session_id": request.session_id,
-        "user_id": user.get("id") if user else None,
+        "user_id": (user.user_id if hasattr(user, 'user_id') else user.get("id")) if user else None,
         "stream": True,
     }
 
@@ -286,7 +288,7 @@ async def ai_chatkit(
         "selected_text": request.selected_text,
         "session_id": request.session_id,
         "thread_id": request.thread_id,
-        "user_id": user.get("id") if user else None,
+        "user_id": (user.user_id if hasattr(user, 'user_id') else user.get("id")) if user else None,
         "page_context": request.page_context,  # Include page context information
     }
 
@@ -326,7 +328,7 @@ async def ai_chatkit_stream(
         "selected_text": request.selected_text,
         "session_id": request.session_id,
         "thread_id": request.thread_id,
-        "user_id": user.get("id") if user else None,
+        "user_id": (user.user_id if hasattr(user, 'user_id') else user.get("id")) if user else None,
         "page_context": request.page_context,
         "stream": True,
     }

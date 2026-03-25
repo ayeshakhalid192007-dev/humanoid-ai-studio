@@ -581,8 +581,8 @@ async def main():
     embedded_chunks = await embedder.embed_curriculum_chunks(all_chunks)
     print(f"✅ Generated {len(embedded_chunks)} embeddings")
 
-    # Upload to Qdrant
-    print("\n☁️  Uploading to Qdrant...")
+    # Upload to Qdrant in batches to avoid timeout
+    print("\n☁️  Uploading to Qdrant (batch size: 50)...")
     qdrant_client = CustomQdrantClient()
 
     points = []
@@ -607,12 +607,18 @@ async def main():
         )
         points.append(point)
 
-    qdrant_client.client.upsert(
-        collection_name="curriculum",
-        points=points
-    )
+    batch_size = 50
+    total_uploaded = 0
+    for i in range(0, len(points), batch_size):
+        batch = points[i:i + batch_size]
+        qdrant_client.client.upsert(
+            collection_name="curriculum",
+            points=batch
+        )
+        total_uploaded += len(batch)
+        print(f"  ↑ Uploaded batch {i // batch_size + 1}: {total_uploaded}/{len(points)} points")
 
-    print(f"✅ Uploaded {len(points)} points to Qdrant")
+    print(f"✅ Uploaded {total_uploaded} points to Qdrant")
 
     # Verify retrieval
     print("\n🧪 Testing retrieval...")

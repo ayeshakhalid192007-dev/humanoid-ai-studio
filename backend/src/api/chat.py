@@ -114,14 +114,10 @@ async def chat_query(request: Request, chat_request: ChatRequest):
     In mock mode, returns demo responses without real API calls.
     In production mode, uses OpenAI + Qdrant + Neon via orchestrator.
     """
-    # Create a deprecation header for this endpoint
-    response = JSONResponse(
-        content={},
-        headers={
-            "Deprecation": "true",
-            "Link": '</api/ai/chat>; rel="successor-version"',
-        }
-    )
+    deprecation_headers = {
+        "Deprecation": "true",
+        "Link": '</api/ai/chat>; rel="successor-version"',
+    }
 
     try:
         # Check if mock mode is enabled
@@ -197,12 +193,14 @@ async def chat_query(request: Request, chat_request: ChatRequest):
                     url=f"http://localhost:3000{c['payload']['source']}"
                 ))
 
-            response.content = ChatResponse(
-                answer=result["answer"],
-                citations=citations,
-                retrieved_chunks=retrieved_chunks
-            ).dict()
-            return response
+            return JSONResponse(
+                content=ChatResponse(
+                    answer=result["answer"],
+                    citations=citations,
+                    retrieved_chunks=retrieved_chunks
+                ).model_dump(mode="json"),
+                headers=deprecation_headers,
+            )
 
         else:
             # Use orchestrator for real services
@@ -301,32 +299,34 @@ async def chat_query(request: Request, chat_request: ChatRequest):
             for chunk in agent_data.get("retrieved_chunks", []):
                 if isinstance(chunk, dict):
                     retrieved_chunks.append(RetrievedChunk(
-                        chunk_id=chunk.get("id", ""),
-                        text_preview=chunk.get("content", "")[:200],
+                        chunk_id=chunk.get("chunk_id", chunk.get("id", "")),
+                        text_preview=chunk.get("text", chunk.get("content", ""))[:200],
                         score=chunk.get("score", 0.0),
-                        module=chunk.get("module", "").replace("module", ""),
+                        module=chunk.get("module", ""),
                         lesson=chunk.get("lesson", ""),
-                        section_title=chunk.get("title", chunk.get("section", "Unknown")),
-                        url=chunk.get("source", "http://localhost:3000")
+                        section_title=chunk.get("section_title", chunk.get("title", "Unknown")),
+                        url=chunk.get("url", chunk.get("source", "http://localhost:3000"))
                     ))
                 else:
                     # Handle other formats
                     retrieved_chunks.append(RetrievedChunk(
-                        chunk_id=getattr(chunk, 'id', ""),
-                        text_preview=getattr(chunk, 'content', "")[:200],
+                        chunk_id=getattr(chunk, 'chunk_id', getattr(chunk, 'id', "")),
+                        text_preview=getattr(chunk, 'text', getattr(chunk, 'content', ""))[:200],
                         score=getattr(chunk, 'score', 0.0),
-                        module=getattr(chunk, 'module', "").replace("module", ""),
+                        module=getattr(chunk, 'module', ""),
                         lesson=getattr(chunk, 'lesson', ""),
-                        section_title=getattr(chunk, 'title', getattr(chunk, 'section', "Unknown")),
-                        url=getattr(chunk, 'source', "http://localhost:3000")
+                        section_title=getattr(chunk, 'section_title', getattr(chunk, 'title', "Unknown")),
+                        url=getattr(chunk, 'url', getattr(chunk, 'source', "http://localhost:3000"))
                     ))
 
-            response.content = ChatResponse(
-                answer=agent_data.get("content", ""),
-                citations=citations,
-                retrieved_chunks=retrieved_chunks
-            ).dict()
-            return response
+            return JSONResponse(
+                content=ChatResponse(
+                    answer=agent_data.get("content", ""),
+                    citations=citations,
+                    retrieved_chunks=retrieved_chunks
+                ).model_dump(mode="json"),
+                headers=deprecation_headers,
+            )
 
     except HTTPException:
         raise
@@ -375,6 +375,7 @@ async def ask_from_selection(request: Request, chat_request: ChatRequest) -> Cha
 
 @router.post("/chat/v2", status_code=status.HTTP_200_OK)
 async def chat_v2(
+    http_request: Request,
     request: ChatV2Request,
     user_id: Optional[str] = Depends(get_user_id_from_session),
     use_chatkit: bool = Query(False, description="Whether to use the new ChatKit-based endpoint")
@@ -389,8 +390,6 @@ async def chat_v2(
     - Session continuity
     - User attribution
     """
-    # Create a response object
-    response = JSONResponse(content={})
 
     try:
         if use_chatkit:
@@ -442,19 +441,19 @@ async def chat_v2(
                 result["answer"]
             )
 
-            response.content = ChatV2Response(
+            return JSONResponse(content=ChatV2Response(
                 answer=personalized_answer,
                 citations=result["citations"],
                 mode=result["mode"],
                 tool_calls=result["tool_calls"],
                 session_id=result["session_id"],
-                retrieved_chunks=[]  # This would come from the agent if needed
-            ).dict()
+                retrieved_chunks=[]
+            ).model_dump(mode="json"))
 
         else:
             # Use the standard orchestrator approach (original behavior)
             # Get orchestrator
-            orchestrator = await get_orchestrator(request)
+            orchestrator = await get_orchestrator(http_request)
 
             # Validate mode/selected_text combination
             if request.mode == AnsweringMode.SELECTED_TEXT and not request.selected_text:
@@ -492,16 +491,14 @@ async def chat_v2(
                 f"mode={agent_data.get('mode', request.mode.value)}, agent_type={agent_data.get('agent_type', 'rag_chat')}"
             )
 
-            response.content = ChatV2Response(
+            return JSONResponse(content=ChatV2Response(
                 answer=agent_data.get("content", ""),
                 citations=agent_data.get("citations", []),
                 mode=agent_data.get("mode", request.mode.value),
                 tool_calls=agent_data.get("tool_calls", []),
                 session_id=agent_data.get("session_id", request.session_id or ""),
                 retrieved_chunks=agent_data.get("retrieved_chunks", [])
-            ).dict()
-
-        return response
+            ).model_dump(mode="json"))
 
     except HTTPException:
         raise
@@ -524,6 +521,7 @@ async def chat_v2(
 
 @router.post("/chat/stream")
 async def chat_stream(
+    http_request: Request,
     request: StreamChatRequest,
     user_id: Optional[str] = Depends(get_user_id_from_session)
 ):
@@ -541,7 +539,7 @@ async def chat_stream(
     """
     try:
         # Get orchestrator
-        orchestrator = await get_orchestrator(request)
+        orchestrator = await get_orchestrator(http_request)
 
         # Validate
         if request.mode == AnsweringMode.SELECTED_TEXT and not request.selected_text:
