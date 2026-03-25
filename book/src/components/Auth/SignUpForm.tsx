@@ -130,22 +130,31 @@ export function SignUpForm({ onSuccess, onSwitchToLogin }: SignUpFormProps) {
         // Better Auth returns a session token on sign-up — use it as Bearer for
         // the profile call so it works cross-origin (GitHub Pages → auth server)
         // where third-party cookies are blocked by the browser.
-        const signUpToken: string | null = signUpData.token ?? null;
+        // Newer Better Auth versions nest the token under session.token.
+        const signUpToken: string | null = signUpData.token ?? signUpData.session?.token ?? null;
 
         // Save profile (best-effort — user can complete onboarding later)
-        await fetch(`${AUTH_API_URL}/api/profile`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            ...(signUpToken ? { Authorization: `Bearer ${signUpToken}` } : {}),
-          },
-          body: JSON.stringify({
-            softwareBackground: softwareBackground.trim().slice(0, MAX_BG_LENGTH),
-            hardwareBackground: hardwareBackground.trim().slice(0, MAX_BG_LENGTH),
-            roboticsKnowledge,
-          }),
-        }).catch(() => {});
+        try {
+          const profileResp = await fetch(`${AUTH_API_URL}/api/profile`, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+              ...(signUpToken ? { Authorization: `Bearer ${signUpToken}` } : {}),
+            },
+            body: JSON.stringify({
+              softwareBackground: softwareBackground.trim().slice(0, MAX_BG_LENGTH),
+              hardwareBackground: hardwareBackground.trim().slice(0, MAX_BG_LENGTH),
+              roboticsKnowledge,
+            }),
+          });
+          if (!profileResp.ok) {
+            const profileErr = await profileResp.json().catch(() => ({}));
+            console.warn(`Profile save failed (${profileResp.status}):`, profileErr);
+          }
+        } catch (profileNetErr) {
+          console.warn("Profile save network error:", profileNetErr);
+        }
 
         // Redirect back to auth server with original OAuth params (including PKCE)
         const authorizeParams = new URLSearchParams();

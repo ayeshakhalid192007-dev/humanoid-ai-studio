@@ -268,6 +268,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const resp = await fetch(`${AUTH_API_URL}/api/auth/sign-up/email`, {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password, name }),
         });
@@ -314,6 +315,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Step 1: create account
         const resp = await fetch(`${AUTH_API_URL}/api/auth/sign-up/email`, {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password, name }),
         });
@@ -329,7 +331,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Better Auth returns a session token on sign-up — use it as Bearer for
         // the profile call so it works cross-origin (GitHub Pages → auth server)
         // where third-party cookies are blocked by the browser.
-        const signUpToken: string | null = data.token ?? null;
+        // Newer Better Auth versions nest the token under session.token.
+        const signUpToken: string | null = data.token ?? data.session?.token ?? null;
 
         // Step 2: save profile using Bearer token (cross-origin safe) + cookie fallback
         const profileResp = await fetch(`${AUTH_API_URL}/api/profile`, {

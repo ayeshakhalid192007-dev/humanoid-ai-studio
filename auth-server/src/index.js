@@ -6,8 +6,10 @@
  */
 
 // Polyfill Web Crypto for Node.js < 19 (required by Better Auth OIDC cookie signing)
+// Check for .subtle specifically — some Node versions expose globalThis.crypto but
+// without the SubtleCrypto interface that Better Auth's RS256 signing requires.
 import nodeCrypto from "crypto";
-if (!globalThis.crypto) {
+if (!globalThis.crypto?.subtle) {
   globalThis.crypto = nodeCrypto.webcrypto;
 }
 // Diagnostic: log crypto status at startup
