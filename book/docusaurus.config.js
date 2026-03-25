@@ -13,7 +13,7 @@ const config = {
 
   // Set the production url of your site here
   url: 'https://ayeshakhalid192007-dev.github.io',
-  baseUrl: process.env.BASE_URL || '/',
+  baseUrl: process.env.BASE_URL || '/humanoid-ai-studio/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
