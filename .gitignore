@@ -80,3 +80,6 @@ cookies.txt
 
 # Runtime reports
 runtime-guard-report.md
+
+# Local Netlify folder
+.netlify

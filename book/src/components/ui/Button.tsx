@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import DocusaurusLink from '@docusaurus/Link';
 
 export interface ButtonProps {
   children: React.ReactNode;
@@ -61,22 +62,41 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   if (href) {
-    // Render as anchor for navigation
+    const isExternal = href.startsWith('http://') || href.startsWith('https://') || href.startsWith('//');
+    if (isExternal) {
+      // Raw anchor for external links
+      return (
+        <motion.a
+          href={href}
+          target={target}
+          rel={rel}
+          className={baseClasses}
+          onClick={onClick as React.MouseEventHandler<HTMLAnchorElement>}
+          {...motionProps}
+        >
+          <span className="flex items-center justify-center gap-2">
+            {startIcon && <span>{startIcon}</span>}
+            {children}
+            {endIcon && <span>{endIcon}</span>}
+          </span>
+        </motion.a>
+      );
+    }
+    // Use Docusaurus Link for internal navigation — handles baseUrl automatically
     return (
-      <motion.a
+      <DocusaurusLink
         href={href}
         target={target}
         rel={rel}
         className={baseClasses}
         onClick={onClick as React.MouseEventHandler<HTMLAnchorElement>}
-        {...motionProps}
       >
         <span className="flex items-center justify-center gap-2">
           {startIcon && <span>{startIcon}</span>}
           {children}
           {endIcon && <span>{endIcon}</span>}
         </span>
-      </motion.a>
+      </DocusaurusLink>
     );
   }
 

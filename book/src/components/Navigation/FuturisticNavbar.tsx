@@ -18,6 +18,8 @@ function FuturisticNavbarInner() {
   // Auth hook called at top-level — no hooks-in-callbacks violation
   const { useAuth } = require('../../context/AuthContext') as typeof import('../../context/AuthContext');
   const { isAuthenticated, user, signOut } = useAuth();
+  const { siteConfig } = useDocusaurusContext();
+  const baseUrl = siteConfig.baseUrl.replace(/\/$/, ''); // e.g. '/humanoid-ai-studio'
 
   // Lazy import UserMenu to keep it client-only
   const { UserMenu } = require('../Auth/UserMenu') as typeof import('../Auth/UserMenu');
@@ -36,8 +38,9 @@ function FuturisticNavbarInner() {
 
   const isActive = (href: string) => {
     if (href.startsWith('#')) return false;
-    if (href === '/') return location.pathname === '/humanoid-ai-studio/' || location.pathname === '/';
-    return location.pathname === href || location.pathname.startsWith(href + '/');
+    if (href === '/') return location.pathname === baseUrl + '/' || location.pathname === '/';
+    const fullPath = baseUrl + href;
+    return location.pathname === fullPath || location.pathname.startsWith(fullPath + '/');
   };
 
   const scrollToSection = (href: string) => {
