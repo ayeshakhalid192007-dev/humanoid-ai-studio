@@ -50,7 +50,7 @@ const trustedOrigins = [
 export const auth = betterAuth({
   database: pool,
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL || "https://auth-server-production-21f2.up.railway.app",
+  baseURL: process.env.BETTER_AUTH_URL || "https://auth-server-production-c993.up.railway.app",
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,

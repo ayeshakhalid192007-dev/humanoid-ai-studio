@@ -24,8 +24,8 @@ const config = {
   onBrokenMarkdownLinks: 'warn',
 
   customFields: {
-    backendUrl: process.env.BACKEND_URL || 'https://backend-production-52d2.up.railway.app',
-    authApiUrl: process.env.AUTH_API_URL || 'https://auth-server-production-21f2.up.railway.app',
+    backendUrl: process.env.BACKEND_URL || 'https://backend-production-4041.up.railway.app',
+    authApiUrl: process.env.AUTH_API_URL || 'https://auth-server-production-c993.up.railway.app',
     oauthClientId: process.env.OAUTH_CLIENT_ID || 'physical-ai-book',
     oauthRedirectUri: process.env.OAUTH_REDIRECT_URI || 'https://ayeshakhalid192007-dev.github.io/humanoid-ai-studio/auth/callback',
   },

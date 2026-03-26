@@ -345,7 +345,7 @@ app.get("/health", async (req, res) => {
 app.get("/", (req, res) => {
   res.json({
     name: "Physical AI Authentication Server",
-    version: "2.0.0",
+    version: "2.1.0",
     database: "Neon Postgres",
     auth: "Better Auth SDK",
     endpoints: {

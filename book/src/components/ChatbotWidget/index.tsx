@@ -38,7 +38,7 @@ const SESSION_ID_KEY = 'chatbot_session_id';
 
 export default function ChatbotWidget(): JSX.Element {
   const { siteConfig } = useDocusaurusContext();
-  const BACKEND_URL = (siteConfig.customFields?.backendUrl as string) || 'https://backend-production-52d2.up.railway.app';
+  const BACKEND_URL = (siteConfig.customFields?.backendUrl as string) || 'https://backend-production-4041.up.railway.app';
   const { isAuthenticated } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
