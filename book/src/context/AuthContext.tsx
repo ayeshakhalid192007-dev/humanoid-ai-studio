@@ -497,7 +497,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // third-party cookie restrictions that cause `state_mismatch` errors
     // when the frontend (GitHub Pages) and auth server (Railway) are on
     // different domains.
-    window.location.href = `${AUTH_API_URL}/api/auth/social-redirect?provider=${provider}&callbackURL=${encodeURIComponent(authorizeUrl)}`;
+    window.location.href = `${AUTH_API_URL}/social-redirect?provider=${provider}&callbackURL=${encodeURIComponent(authorizeUrl)}`;
   }, [AUTH_API_URL, CLIENT_ID, REDIRECT_URI]);
 
   // ─────────────────────────────────────────────────────────────────────────

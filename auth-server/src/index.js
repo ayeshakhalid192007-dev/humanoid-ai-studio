@@ -70,7 +70,8 @@ app.use(
 // the OAuth state cookie is set as a **first-party** cookie, avoiding
 // third-party cookie restrictions when the frontend (GitHub Pages) and
 // auth server (Railway) are on different origins.
-app.get("/api/auth/social-redirect", (req, res) => {
+// Placed outside /api/auth/* to avoid Better Auth's catch-all handler.
+app.get("/social-redirect", (req, res) => {
   const { provider, callbackURL } = req.query;
 
   if (!provider || !callbackURL) {
