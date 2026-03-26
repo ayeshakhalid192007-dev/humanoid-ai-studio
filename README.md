@@ -25,19 +25,53 @@ The platform follows **Spec-Driven Development with Reusable Intelligence (SDD-R
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| **Frontend Book** | Docusaurus 3.6, React 18, TypeScript, Tailwind CSS, Framer Motion |
-| **RAG Backend** | FastAPI (Python 3.11), Uvicorn, Pydantic V2 |
-| **Auth Server** | Express.js 4, Better Auth, Node.js 20 |
-| **LLM** | Google Gemini API (primary), OpenAI API (fallback embeddings) |
-| **Vector DB** | Qdrant Cloud (curriculum embeddings, cosine similarity search) |
-| **Relational DB** | Neon Serverless Postgres (sessions, user profiles, conversation history) |
-| **Cache** | Redis (optional, for token caching and rate limiting) |
-| **Embeddings** | Sentence Transformers — `all-MiniLM-L6-v2` (local, free) |
-| **Deployment** | Railway (backend + auth), Netlify (book frontend) |
-| **Containers** | Docker (backend + auth-server) |
-| **Observability** | OpenTelemetry, Prometheus, structured JSON logging |
+<div align="center">
+
+**Frontend**
+
+![Docusaurus](https://img.shields.io/badge/Docusaurus_3.6-3ECC5F?style=for-the-badge&logo=docusaurus&logoColor=white)
+![React](https://img.shields.io/badge/React_18-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-EF4686?style=for-the-badge&logo=framer&logoColor=white)
+
+**Backend**
+
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Python](https://img.shields.io/badge/Python_3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Uvicorn](https://img.shields.io/badge/Uvicorn-499848?style=for-the-badge&logo=gunicorn&logoColor=white)
+![Pydantic](https://img.shields.io/badge/Pydantic_V2-E92063?style=for-the-badge&logo=pydantic&logoColor=white)
+
+**Auth Server**
+
+![Express](https://img.shields.io/badge/Express.js_4-000000?style=for-the-badge&logo=express&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js_20-339933?style=for-the-badge&logo=node.js&logoColor=white)
+![Better Auth](https://img.shields.io/badge/Better_Auth-6D28D9?style=for-the-badge&logo=auth0&logoColor=white)
+
+**AI & LLM**
+
+![Gemini](https://img.shields.io/badge/Google_Gemini-4285F4?style=for-the-badge&logo=google&logoColor=white)
+![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)
+![Sentence Transformers](https://img.shields.io/badge/Sentence_Transformers-FF6F00?style=for-the-badge&logo=huggingface&logoColor=white)
+
+**Databases**
+
+![Qdrant](https://img.shields.io/badge/Qdrant-DC143C?style=for-the-badge&logo=databricks&logoColor=white)
+![Neon](https://img.shields.io/badge/Neon_Postgres-00E699?style=for-the-badge&logo=postgresql&logoColor=black)
+![Redis](https://img.shields.io/badge/Redis-FF4438?style=for-the-badge&logo=redis&logoColor=white)
+
+**Deployment & Infra**
+
+![Railway](https://img.shields.io/badge/Railway-0B0D0E?style=for-the-badge&logo=railway&logoColor=white)
+![Netlify](https://img.shields.io/badge/Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+
+**Observability**
+
+![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-000000?style=for-the-badge&logo=opentelemetry&logoColor=white)
+![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white)
+
+</div>
 
 ---
 
