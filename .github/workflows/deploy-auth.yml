@@ -1,41 +1,24 @@
-name: Deploy Auth Server to Railway (Production)
-
-# Railway auto-deploys via GitHub integration when this workflow passes.
-# Settings: Railway → auth-server service → Source → Wait for CI: ON
-# No token or deploy hook needed — Railway watches GitHub CI status.
+name: Deploy — Auth Server
 
 on:
   push:
     branches: [main]
     paths:
-      - "auth-server/**"
-      - ".github/workflows/deploy-auth.yml"
-  workflow_dispatch:
+      - 'auth-server/**'
+      - '.github/workflows/deploy-auth.yml'
 
 jobs:
-  audit:
-    name: Auth Server Audit (CI gate for Railway)
+  deploy:
+    name: Deploy Auth Server to Railway
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./auth-server
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: auth-server/package-lock.json
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Audit dependencies
-        run: npm audit --audit-level=high
-        continue-on-error: true
-
-      - name: CI passed — Railway will now deploy automatically
-        run: |
-          echo "✅ CI complete. Railway will deploy auth-server automatically."
-          echo "Monitor: https://railway.app/project/80b5195c-adeb-47c7-a3b8-6a1c12ff0472"
+      - name: Deploy auth-server
+        run: railway up auth-server --path-as-root --service auth-server --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

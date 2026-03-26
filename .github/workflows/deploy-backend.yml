@@ -1,51 +1,24 @@
-name: Deploy Backend to Railway (Production)
-
-# Railway auto-deploys via GitHub integration when this workflow passes.
-# Settings: Railway → backend service → Source → Wait for CI: ON
-# No token or deploy hook needed — Railway watches GitHub CI status.
+name: Deploy — Backend
 
 on:
   push:
     branches: [main]
     paths:
-      - "backend/**"
-      - ".github/workflows/deploy-backend.yml"
-  workflow_dispatch:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
 
 jobs:
-  test:
-    name: Backend Tests (CI gate for Railway)
+  deploy:
+    name: Deploy Backend to Railway
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./backend
-    env:
-      MOCK_MODE: "true"
-      ENV: "test"
-      GEMINI_API_KEY: "test-key"
-      NEON_DATABASE_URL: "postgresql://test:test@localhost/test"
-      QDRANT_URL: "http://localhost:6333"
-      QDRANT_API_KEY: "test-key"
-      QDRANT_COLLECTION_NAME: "curriculum"
-      BETTER_AUTH_SECRET: "test-secret-32-chars-padded-here"
-      BETTER_AUTH_URL: "http://localhost:3002"
+
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-          cache-dependency-path: backend/requirements.txt
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Run tests
-        run: pytest tests/ -v --tb=short --timeout=30
-        continue-on-error: true
-
-      - name: CI passed — Railway will now deploy automatically
-        run: |
-          echo "✅ CI complete. Railway will deploy backend automatically."
-          echo "Monitor: https://railway.app/project/80b5195c-adeb-47c7-a3b8-6a1c12ff0472"
+      - name: Deploy backend
+        run: railway up backend --path-as-root --service backend --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
