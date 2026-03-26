@@ -5,3 +5,4 @@ buildCommand = "npm ci"
 startCommand = "node --require ./src/crypto-polyfill.cjs src/index.js"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
+numReplicas = 1
