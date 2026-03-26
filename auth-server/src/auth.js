@@ -131,9 +131,13 @@ export const auth = betterAuth({
     }),
 
     // OIDC Provider — turns this server into an OAuth 2.1 / OIDC authorization server
+    // FRONTEND_URL is the origin only (e.g. https://ayeshakhalid192007-dev.github.io).
+    // The Docusaurus book is deployed at the /humanoid-ai-studio/ sub-path, so we
+    // always append it to construct the correct login/consent URLs.
+    // Override with OIDC_BASE_URL env var if the base path ever changes.
     oidcProvider({
-      loginPage: `${process.env.FRONTEND_URL || "https://ayeshakhalid192007-dev.github.io/humanoid-ai-studio"}/auth/login`,
-      consentPage: `${process.env.FRONTEND_URL || "https://ayeshakhalid192007-dev.github.io/humanoid-ai-studio"}/auth/consent`,
+      loginPage: `${(process.env.OIDC_BASE_URL || `${(process.env.FRONTEND_URL || "https://ayeshakhalid192007-dev.github.io").replace(/\/$/, "")}/humanoid-ai-studio`)}/auth/login`,
+      consentPage: `${(process.env.OIDC_BASE_URL || `${(process.env.FRONTEND_URL || "https://ayeshakhalid192007-dev.github.io").replace(/\/$/, "")}/humanoid-ai-studio`)}/auth/consent`,
       // The book app is a trusted first-party public client (no secret — uses PKCE)
       trustedClients: [
         {
