@@ -32,19 +32,25 @@ const pool = new Pool({
 
 // Parse allowed origins from env or fall back to localhost defaults.
 // Uses CORS_ORIGINS to stay consistent with index.js and the .env file.
-const trustedOrigins = (process.env.CORS_ORIGINS || process.env.ALLOWED_ORIGINS)
-  ? (process.env.CORS_ORIGINS || process.env.ALLOWED_ORIGINS).split(",").map((o) => o.trim())
-  : [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://localhost:3002",
-      "http://127.0.0.1:3000",
-    ];
+// Production frontend origin — always trusted regardless of env config
+const PRODUCTION_ORIGIN = "https://ayeshakhalid192007-dev.github.io";
+
+const trustedOrigins = [
+  ...((process.env.CORS_ORIGINS || process.env.ALLOWED_ORIGINS)
+    ? (process.env.CORS_ORIGINS || process.env.ALLOWED_ORIGINS).split(",").map((o) => o.trim())
+    : [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "http://127.0.0.1:3000",
+      ]),
+  PRODUCTION_ORIGIN,
+].filter((v, i, a) => a.indexOf(v) === i); // deduplicate
 
 export const auth = betterAuth({
   database: pool,
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:3002",
+  baseURL: process.env.BETTER_AUTH_URL || "https://auth-server-production-21f2.up.railway.app",
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
@@ -122,14 +128,14 @@ export const auth = betterAuth({
 
     // OIDC Provider — turns this server into an OAuth 2.1 / OIDC authorization server
     oidcProvider({
-      loginPage: `${process.env.FRONTEND_URL || "http://localhost:3000"}/auth/login`,
-      consentPage: `${process.env.FRONTEND_URL || "http://localhost:3000"}/auth/consent`,
+      loginPage: `${process.env.FRONTEND_URL || "https://ayeshakhalid192007-dev.github.io/humanoid-ai-studio"}/auth/login`,
+      consentPage: `${process.env.FRONTEND_URL || "https://ayeshakhalid192007-dev.github.io/humanoid-ai-studio"}/auth/consent`,
       // The book app is a trusted first-party public client (no secret — uses PKCE)
       trustedClients: [
         {
           clientId: process.env.BOOK_CLIENT_ID || "physical-ai-book",
           type: "public",
-          redirectUrls: (process.env.BOOK_REDIRECT_URIS || "http://localhost:3000/auth/callback").split(",").map((u) => u.trim()),
+          redirectUrls: (process.env.BOOK_REDIRECT_URIS || "https://ayeshakhalid192007-dev.github.io/humanoid-ai-studio/auth/callback").split(",").map((u) => u.trim()),
           skipConsent: true,
         },
       ],

@@ -235,10 +235,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ── Sign in — initiates OAuth PKCE redirect ───────────────────────────────
 
   const signIn = useCallback(
-    async (_email: string, _password: string): Promise<{ success: boolean; error?: string }> => {
-      // OAuth flow: we redirect to the auth server's login page.
-      // The auth server authenticates the user and redirects back to REDIRECT_URI.
+    async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+      setIsLoading(true);
+      setError(null);
       try {
+        // Step 1: Authenticate with credentials — creates a session on the auth server
+        const resp = await fetch(`${AUTH_API_URL}/api/auth/sign-in/email`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (!resp.ok) {
+          const data = await resp.json().catch(() => ({}));
+          const msg = data.message ?? data.error ?? "Invalid email or password";
+          setError(msg);
+          return { success: false, error: msg };
+        }
+
+        // Step 2: Now that a session exists, start the PKCE flow.
+        // The auth server's authorize endpoint will see the session cookie
+        // (first-party on top-level navigation) and issue the code.
         const { url } = await buildAuthorizationUrl({
           authServerUrl: AUTH_API_URL,
           clientId: CLIENT_ID,
@@ -247,9 +265,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         window.location.href = url;
         return { success: true };
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Failed to start sign-in";
+        const message = err instanceof Error ? err.message : "Failed to sign in";
         setError(message);
         return { success: false, error: message };
+      } finally {
+        setIsLoading(false);
       }
     },
     [AUTH_API_URL, CLIENT_ID, REDIRECT_URI]

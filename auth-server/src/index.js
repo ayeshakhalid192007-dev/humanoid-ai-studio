@@ -39,14 +39,21 @@ const pool = new Pool({
 await rateLimiter.initialize();
 
 // CORS — parse allowed origins from env var or fall back to localhost defaults
-const allowedOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim())
-  : [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "http://localhost:3002",
-      "http://127.0.0.1:3000",
-    ];
+// Production frontend origin — always allowed regardless of CORS_ORIGINS env var
+const PRODUCTION_ORIGIN = "https://ayeshakhalid192007-dev.github.io";
+
+const allowedOrigins = [
+  ...(process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim())
+    : [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "http://127.0.0.1:3000",
+      ]),
+  // Always include production origin so GitHub Pages frontend can reach the API
+  ...(PRODUCTION_ORIGIN ? [PRODUCTION_ORIGIN] : []),
+].filter((v, i, a) => a.indexOf(v) === i); // deduplicate
 
 app.use(
   cors({
