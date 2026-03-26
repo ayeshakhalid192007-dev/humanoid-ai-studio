@@ -491,24 +491,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       redirectUri: REDIRECT_URI,
     });
 
-    // Better Auth 1.5+ requires POST /api/auth/sign-in/social with the
-    // provider in the request body.  The response contains the OAuth
-    // redirect URL which we then navigate to.
-    const resp = await fetch(`${AUTH_API_URL}/api/auth/sign-in/social`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ provider, callbackURL: authorizeUrl }),
-    });
-
-    const data = await resp.json();
-
-    if (!resp.ok || !data.url) {
-      throw new Error(data.message ?? "Failed to start social sign-in");
-    }
-
-    // Navigate to the provider's OAuth consent page (Google / GitHub)
-    window.location.href = data.url;
+    // Redirect the browser directly to the auth server's social sign-in
+    // endpoint instead of using fetch.  This ensures the OAuth state cookie
+    // is set as a **first-party** cookie on the auth server domain, avoiding
+    // third-party cookie restrictions that cause `state_mismatch` errors
+    // when the frontend (GitHub Pages) and auth server (Railway) are on
+    // different domains.
+    window.location.href = `${AUTH_API_URL}/api/auth/sign-in/social?provider=${provider}&callbackURL=${encodeURIComponent(authorizeUrl)}`;
   }, [AUTH_API_URL, CLIENT_ID, REDIRECT_URI]);
 
   // ─────────────────────────────────────────────────────────────────────────
