@@ -64,6 +64,53 @@ app.use(
   })
 );
 
+// GET redirect for social sign-in — serves a tiny page that performs a
+// same-origin POST to Better Auth's /api/auth/sign-in/social endpoint.
+// Because the browser is ON the auth-server domain when the fetch runs,
+// the OAuth state cookie is set as a **first-party** cookie, avoiding
+// third-party cookie restrictions when the frontend (GitHub Pages) and
+// auth server (Railway) are on different origins.
+app.get("/api/auth/social-redirect", (req, res) => {
+  const { provider, callbackURL } = req.query;
+
+  if (!provider || !callbackURL) {
+    return res.status(400).json({ error: "provider and callbackURL are required" });
+  }
+
+  // Only allow known providers to prevent injection
+  if (!["google", "github"].includes(provider)) {
+    return res.status(400).json({ error: "Invalid provider" });
+  }
+
+  // Embed values safely via JSON.stringify (handles all escaping)
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(`<!DOCTYPE html>
+<html><head><title>Redirecting…</title></head>
+<body>
+<p>Redirecting to ${provider === "google" ? "Google" : "GitHub"}…</p>
+<script>
+(async () => {
+  try {
+    const resp = await fetch("/api/auth/sign-in/social", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ provider: ${JSON.stringify(provider)}, callbackURL: ${JSON.stringify(callbackURL)} })
+    });
+    const data = await resp.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      document.body.textContent = "Sign-in failed. Please go back and try again.";
+    }
+  } catch (e) {
+    document.body.textContent = "Network error. Please go back and try again.";
+  }
+})();
+</script>
+</body></html>`);
+});
+
 // Better Auth handles ALL /api/auth/* routes
 app.all("/api/auth/*", toNodeHandler(auth));
 

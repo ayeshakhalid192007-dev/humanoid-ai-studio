@@ -491,13 +491,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       redirectUri: REDIRECT_URI,
     });
 
-    // Redirect the browser directly to the auth server's social sign-in
-    // endpoint instead of using fetch.  This ensures the OAuth state cookie
-    // is set as a **first-party** cookie on the auth server domain, avoiding
+    // Redirect the browser directly to the auth server's social-redirect
+    // endpoint.  This ensures the OAuth state cookie is set as a
+    // **first-party** cookie on the auth server domain, avoiding
     // third-party cookie restrictions that cause `state_mismatch` errors
     // when the frontend (GitHub Pages) and auth server (Railway) are on
     // different domains.
-    window.location.href = `${AUTH_API_URL}/api/auth/sign-in/social?provider=${provider}&callbackURL=${encodeURIComponent(authorizeUrl)}`;
+    window.location.href = `${AUTH_API_URL}/api/auth/social-redirect?provider=${provider}&callbackURL=${encodeURIComponent(authorizeUrl)}`;
   }, [AUTH_API_URL, CLIENT_ID, REDIRECT_URI]);
 
   // ─────────────────────────────────────────────────────────────────────────
