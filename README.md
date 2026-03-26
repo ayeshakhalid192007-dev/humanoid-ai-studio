@@ -5,7 +5,7 @@
 [![Deploy Book](https://img.shields.io/badge/Book-Netlify-00C7B7?logo=netlify)](https://netlify.com)
 [![Backend](https://img.shields.io/badge/Backend-Railway-0B0D0E?logo=railway)](https://railway.app)
 [![Auth Server](https://img.shields.io/badge/Auth-Railway-0B0D0E?logo=railway)](https://railway.app)
-[![License](https://img.shields.io/badge/License-To%20Be%20Determined-lightgrey)](#license)
+[![License](https://img.shields.io/badge/License-MIT-green)](#license)
 
 ---
 
@@ -350,7 +350,31 @@ Every feature has:
 
 ## License
 
-To be determined by project maintainers.
+This project is licensed under the **MIT License**.
+
+```
+MIT License
+
+Copyright (c) 2026 Humanoid AI Studio Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
 
 ---
 
@@ -362,4 +386,18 @@ Maintainer contact information and community links to be added.
 
 ---
 
-> **DEVELOP AND DEPLOY THIS SO IT WILL BE BENEFICIAL FOR EVERYONE**
+<div align="center">
+
+![DEVELOP](https://img.shields.io/badge/DEVELOP-FF0000?style=for-the-badge)
+![AND](https://img.shields.io/badge/AND-FF6600?style=for-the-badge)
+![DEPLOY](https://img.shields.io/badge/DEPLOY-FFD700?style=for-the-badge)
+![THIS](https://img.shields.io/badge/THIS-00CC00?style=for-the-badge)
+![SO](https://img.shields.io/badge/SO-00CCCC?style=for-the-badge)
+![IT](https://img.shields.io/badge/IT-0099FF?style=for-the-badge)
+![WILL](https://img.shields.io/badge/WILL-6600FF?style=for-the-badge)
+![BE](https://img.shields.io/badge/BE-CC00CC?style=for-the-badge)
+![BENEFICIAL](https://img.shields.io/badge/BENEFICIAL-FF3399?style=for-the-badge)
+![FOR](https://img.shields.io/badge/FOR-FF6600?style=for-the-badge)
+![EVERYONE](https://img.shields.io/badge/EVERYONE-FF0000?style=for-the-badge)
+
+</div>
