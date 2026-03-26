@@ -169,11 +169,34 @@ async function getSessionFromRequest(req) {
   // 1. Try Bearer token first (OAuth clients)
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith("Bearer ")) {
+    // 1a. Try as Better Auth session token (bearer plugin)
     try {
       const session = await auth.api.getSession({
         headers: new Headers({ authorization: authHeader }),
       });
       if (session?.user) return session;
+    } catch {
+      // fall through
+    }
+
+    // 1b. Try as OAuth2 JWT access token via the OIDC userinfo endpoint.
+    // The oidcProvider issues JWT access tokens that auth.api.getSession() does
+    // not understand — use the /userinfo endpoint which validates JWTs natively.
+    try {
+      const userinfoResp = await auth.handler(
+        new Request(`${BETTER_AUTH_BASE_URL}/api/auth/oauth2/userinfo`, {
+          headers: { authorization: authHeader },
+        })
+      );
+      if (userinfoResp.ok) {
+        const info = await userinfoResp.json();
+        if (info?.sub) {
+          const result = await pool.query(`SELECT * FROM "user" WHERE id = $1`, [info.sub]);
+          if (result.rows[0]) {
+            return { user: result.rows[0], session: null };
+          }
+        }
+      }
     } catch {
       // fall through to cookie check
     }
