@@ -28,6 +28,7 @@ import crypto from "crypto";
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1); // Required: Railway runs behind a reverse proxy — trust forwarded headers
 const PORT = process.env.PORT || 3002;
 
 const pool = new Pool({
