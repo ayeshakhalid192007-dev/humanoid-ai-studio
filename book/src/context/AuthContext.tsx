@@ -471,14 +471,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       redirectUri: REDIRECT_URI,
     });
 
-    // Navigate the browser directly to the auth server's social sign-in endpoint.
-    // Using window.location.href (browser navigation) instead of fetch avoids
-    // CORS restrictions — XHR/fetch is blocked cross-origin, but browser
-    // navigations are not subject to CORS.
-    // Better Auth's social sign-in uses provider as a path segment:
-    //   GET /api/auth/sign-in/social/:provider?callbackURL=...
-    const params = new URLSearchParams({ callbackURL: authorizeUrl });
-    window.location.href = `${AUTH_API_URL}/api/auth/sign-in/social/${provider}?${params.toString()}`;
+    // Better Auth 1.5+ requires POST /api/auth/sign-in/social with the
+    // provider in the request body.  The response contains the OAuth
+    // redirect URL which we then navigate to.
+    const resp = await fetch(`${AUTH_API_URL}/api/auth/sign-in/social`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider, callbackURL: authorizeUrl }),
+    });
+
+    const data = await resp.json();
+
+    if (!resp.ok || !data.url) {
+      throw new Error(data.message ?? "Failed to start social sign-in");
+    }
+
+    // Navigate to the provider's OAuth consent page (Google / GitHub)
+    window.location.href = data.url;
   }, [AUTH_API_URL, CLIENT_ID, REDIRECT_URI]);
 
   // ─────────────────────────────────────────────────────────────────────────

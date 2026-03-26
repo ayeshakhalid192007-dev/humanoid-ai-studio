@@ -68,8 +68,8 @@ export const auth = betterAuth({
   },
   // Social providers — Google and GitHub OAuth 2.0
   // Better Auth handles the full OAuth flow automatically:
-  // - GET /api/auth/sign-in/social/:provider  → redirects to provider
-  // - GET /api/auth/callback/:provider        → exchanges code, creates/links user
+  // - POST /api/auth/sign-in/social  → returns { url } to redirect to provider
+  // - GET  /api/auth/callback/:provider → exchanges code, creates/links user
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID,
