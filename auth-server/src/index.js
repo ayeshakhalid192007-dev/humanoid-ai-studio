@@ -20,7 +20,7 @@ import cors from "cors";
 import pkg from "pg";
 const { Pool } = pkg;
 import { toNodeHandler } from "better-auth/node";
-import { auth } from "./auth.js";
+import { auth, BETTER_AUTH_BASE_URL } from "./auth.js";
 import dotenv from "dotenv";
 import rateLimiter from "./utils/rate-limiter.js";
 import crypto from "crypto";
@@ -111,6 +111,51 @@ app.get("/social-redirect", (req, res) => {
 })();
 </script>
 </body></html>`);
+});
+
+// POST /credential-relay — same-domain sign-in relay for email/password PKCE flow.
+// The frontend (GitHub Pages) cannot reliably send SameSite=Lax session cookies
+// in cross-domain navigations. By having the browser POST credentials directly
+// to this endpoint on the auth server, the resulting session cookie is first-party
+// and is sent when we immediately redirect to /api/auth/oauth2/authorize.
+// Same principle as /social-redirect for social login.
+app.post("/credential-relay", express.urlencoded({ extended: false }), async (req, res) => {
+  const { email, password, client_id, redirect_uri, response_type, scope, state, code_challenge, code_challenge_method } = req.body;
+
+  const frontendLoginBase = process.env.OIDC_BASE_URL ||
+    `${(process.env.FRONTEND_URL || "https://ayeshakhalid192007-dev.github.io").replace(/\/$/, "")}/humanoid-ai-studio`;
+
+  // Rebuild the OAuth params to forward on redirect
+  const oauthQS = new URLSearchParams({ client_id, redirect_uri, response_type: response_type || "code", scope: scope || "openid profile email", state, code_challenge, code_challenge_method: code_challenge_method || "S256" }).toString();
+
+  if (!email || !password) {
+    return res.redirect(`${frontendLoginBase}/auth/login?${oauthQS}&_error=${encodeURIComponent("Email and password are required")}`);
+  }
+
+  try {
+    // Call sign-in as a same-origin request so Better Auth sets a first-party session cookie
+    const signInResp = await auth.handler(
+      new Request(`${BETTER_AUTH_BASE_URL}/api/auth/sign-in/email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+    );
+
+    if (!signInResp.ok) {
+      return res.redirect(`${frontendLoginBase}/auth/login?${oauthQS}&_error=${encodeURIComponent("Invalid email or password")}`);
+    }
+
+    // Forward session cookies from Better Auth as first-party (we are on the auth server domain)
+    const rawSetCookie = signInResp.headers.getSetCookie?.() ?? [];
+    rawSetCookie.forEach((c) => res.append("Set-Cookie", c));
+
+    // Redirect to authorize — session cookie is now first-party and will be sent
+    res.redirect(`/api/auth/oauth2/authorize?${oauthQS}`);
+  } catch (err) {
+    console.error("[credential-relay] error:", err);
+    res.redirect(`${frontendLoginBase}/auth/login?${oauthQS}&_error=${encodeURIComponent("Authentication error. Please try again.")}`);
+  }
 });
 
 // Better Auth handles ALL /api/auth/* routes

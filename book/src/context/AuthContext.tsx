@@ -20,6 +20,8 @@ import React, {
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import {
   buildAuthorizationUrl,
+  generateCodeVerifier,
+  generateCodeChallenge,
   exchangeCodeForTokens,
   refreshAccessToken,
   getUserInfo,
@@ -31,6 +33,44 @@ import {
   PKCE_VERIFIER_KEY,
   type OAuthUserInfo,
 } from "../lib/oauth";
+
+/**
+ * Submit a native form POST to the auth server's /credential-relay endpoint.
+ * This keeps sign-in on the auth-server domain so the resulting session cookie
+ * is first-party and is sent when the server immediately redirects to /authorize.
+ * Avoids the SameSite=Lax cross-domain cookie problem.
+ */
+function submitCredentialRelay(
+  authApiUrl: string,
+  email: string,
+  password: string,
+  pkce: { clientId: string; redirectUri: string; state: string; challenge: string }
+): void {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = `${authApiUrl}/credential-relay`;
+
+  const fields: Record<string, string> = {
+    email,
+    password,
+    client_id: pkce.clientId,
+    redirect_uri: pkce.redirectUri,
+    response_type: "code",
+    scope: "openid profile email",
+    state: pkce.state,
+    code_challenge: pkce.challenge,
+    code_challenge_method: "S256",
+  };
+  for (const [name, value] of Object.entries(fields)) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  }
+  document.body.appendChild(form);
+  form.submit();
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -239,37 +279,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       setError(null);
       try {
-        // Step 1: Authenticate with credentials — creates a session on the auth server
-        const resp = await fetch(`${AUTH_API_URL}/api/auth/sign-in/email`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
+        // Generate PKCE params locally — no network call needed yet.
+        const verifier = generateCodeVerifier();
+        const challenge = await generateCodeChallenge(verifier);
+        const state = crypto.getRandomValues(new Uint8Array(16));
+        const stateB64 = btoa(String.fromCharCode(...state))
+          .replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
 
-        if (!resp.ok) {
-          const data = await resp.json().catch(() => ({}));
-          const msg = data.message ?? data.error ?? "Invalid email or password";
-          setError(msg);
-          return { success: false, error: msg };
-        }
+        // Persist verifier + state so the callback page can exchange the code.
+        sessionStorage.setItem(PKCE_VERIFIER_KEY, verifier);
+        sessionStorage.setItem("oauth_state", stateB64);
 
-        // Step 2: Now that a session exists, start the PKCE flow.
-        // The auth server's authorize endpoint will see the session cookie
-        // (first-party on top-level navigation) and issue the code.
-        const { url } = await buildAuthorizationUrl({
-          authServerUrl: AUTH_API_URL,
+        // Submit via a native form POST to /credential-relay on the auth server.
+        // This keeps sign-in on the auth-server domain (first-party cookie) so the
+        // session cookie is available when the server redirects to /authorize.
+        submitCredentialRelay(AUTH_API_URL, email, password, {
           clientId: CLIENT_ID,
           redirectUri: REDIRECT_URI,
+          state: stateB64,
+          challenge,
         });
-        window.location.href = url;
+
+        // Form submission navigates away — return value is never used.
         return { success: true };
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to sign in";
         setError(message);
-        return { success: false, error: message };
-      } finally {
         setIsLoading(false);
+        return { success: false, error: message };
       }
     },
     [AUTH_API_URL, CLIENT_ID, REDIRECT_URI]
@@ -301,13 +338,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return { success: false, error: msg };
         }
 
-        // Account created — now start OAuth flow to get tokens
-        const { url } = await buildAuthorizationUrl({
-          authServerUrl: AUTH_API_URL,
-          clientId: CLIENT_ID,
-          redirectUri: REDIRECT_URI,
-        });
-        window.location.href = url;
+        // Account created — use credential-relay for first-party session cookie
+        const ver = generateCodeVerifier();
+        const ch = await generateCodeChallenge(ver);
+        const stArr = crypto.getRandomValues(new Uint8Array(16));
+        const st = btoa(String.fromCharCode(...stArr)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+        sessionStorage.setItem(PKCE_VERIFIER_KEY, ver);
+        sessionStorage.setItem("oauth_state", st);
+        submitCredentialRelay(AUTH_API_URL, email, password, { clientId: CLIENT_ID, redirectUri: REDIRECT_URI, state: st, challenge: ch });
         return { success: true };
       } catch (err) {
         const message = err instanceof Error ? err.message : "Sign up failed";
@@ -370,13 +408,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.warn("Profile save failed after signup — user can complete onboarding later");
         }
 
-        // Step 3: start OAuth flow to get tokens
-        const { url } = await buildAuthorizationUrl({
-          authServerUrl: AUTH_API_URL,
+        // Step 3: start OAuth flow via credential-relay (first-party session cookie)
+        const verifier = generateCodeVerifier();
+        const challenge = await generateCodeChallenge(verifier);
+        const stateArr = crypto.getRandomValues(new Uint8Array(16));
+        const stateB64 = btoa(String.fromCharCode(...stateArr))
+          .replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+        sessionStorage.setItem(PKCE_VERIFIER_KEY, verifier);
+        sessionStorage.setItem("oauth_state", stateB64);
+        submitCredentialRelay(AUTH_API_URL, email, password, {
           clientId: CLIENT_ID,
           redirectUri: REDIRECT_URI,
+          state: stateB64,
+          challenge,
         });
-        window.location.href = url;
         return { success: true };
       } catch (err) {
         const message = err instanceof Error ? err.message : "Sign up failed";

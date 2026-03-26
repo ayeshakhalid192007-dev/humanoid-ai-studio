@@ -51,6 +51,8 @@ const trustedOrigins = [
 const rawAuthUrl = process.env.BETTER_AUTH_URL || "https://auth-server-production-c993.up.railway.app";
 const BETTER_AUTH_BASE_URL = (rawAuthUrl.startsWith("http") ? rawAuthUrl : `https://${rawAuthUrl}`).replace(/\/+$/, "");
 
+export { BETTER_AUTH_BASE_URL };
+
 export const auth = betterAuth({
   database: pool,
   secret: process.env.BETTER_AUTH_SECRET,

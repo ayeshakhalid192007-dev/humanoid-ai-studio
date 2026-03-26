@@ -29,7 +29,12 @@ export function LoginForm({ onSuccess, onSwitchToSignUp }: LoginFormProps) {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  // Show errors injected by /credential-relay via ?_error= redirect param
+  const relayError =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("_error") ?? ""
+      : "";
+  const [error, setError] = useState(relayError);
 
   // Detect OAuth relay mode — auth server redirected us here with these params
   const searchParams =
@@ -60,31 +65,32 @@ export function LoginForm({ onSuccess, onSwitchToSignUp }: LoginFormProps) {
     }
 
     if (isOAuthRelay) {
-      // ── OAuth relay: do direct credential auth, then bounce back to auth server ──
-      try {
-        const resp = await fetch(`${AUTH_API_URL}/api/auth/sign-in/email`, {
-          method: "POST",
-          credentials: "include", // auth server sets the session cookie
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        });
-
-        if (!resp.ok) {
-          const data = await resp.json().catch(() => ({}));
-          setError(data.message ?? data.error ?? "Invalid credentials");
-          return;
-        }
-
-        // Rebuild authorize URL with ALL original OAuth params (including PKCE)
-        const authorizeParams = new URLSearchParams();
-        Object.entries(oauthParams).forEach(([k, v]) => {
-          if (v) authorizeParams.set(k, v);
-        });
-
-        window.location.href = `${AUTH_API_URL}/api/auth/oauth2/authorize?${authorizeParams.toString()}`;
-      } catch {
-        setError("Network error. Please try again.");
+      // ── OAuth relay: POST credentials + PKCE params to /credential-relay on the
+      // auth server. Sign-in happens same-domain so the session cookie is first-party
+      // and is present when the server immediately redirects to /authorize.
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = `${AUTH_API_URL}/credential-relay`;
+      const fields: Record<string, string> = {
+        email,
+        password,
+        client_id: oauthParams.client_id ?? "",
+        redirect_uri: oauthParams.redirect_uri ?? "",
+        response_type: oauthParams.response_type ?? "code",
+        scope: oauthParams.scope ?? "openid profile email",
+        state: oauthParams.state ?? "",
+        code_challenge: oauthParams.code_challenge ?? "",
+        code_challenge_method: oauthParams.code_challenge_method ?? "S256",
+      };
+      for (const [name, value] of Object.entries(fields)) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
       }
+      document.body.appendChild(form);
+      form.submit();
     } else {
       // ── Standalone: initiate the OAuth PKCE flow ──
       const result = await signIn(email, password);
