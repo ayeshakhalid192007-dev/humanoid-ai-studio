@@ -320,6 +320,17 @@ app.post("/api/admin/clients/register", async (req, res) => {
   }
 });
 
+// Debug: show exact OAuth callback URLs (safe to expose — no secrets)
+app.get("/debug/oauth-urls", (req, res) => {
+  const base = (process.env.BETTER_AUTH_URL || "https://auth-server-production-c993.up.railway.app").replace(/\/+$/, "");
+  res.json({
+    better_auth_url: base,
+    google_callback: `${base}/api/auth/callback/google`,
+    github_callback: `${base}/api/auth/callback/github`,
+    note: "Register these exact URLs in your Google Cloud Console and GitHub OAuth App",
+  });
+});
+
 // Health check
 app.get("/health", async (req, res) => {
   try {
@@ -370,6 +381,21 @@ app.use((err, req, res, next) => {
 
 // Start server
 async function startServer() {
+  // Validate required env vars before starting
+  if (!process.env.BETTER_AUTH_SECRET) {
+    console.error("[startup] FATAL: BETTER_AUTH_SECRET is not set");
+    process.exit(1);
+  }
+  if (!process.env.DATABASE_URL && !process.env.NEON_DATABASE_URL) {
+    console.error("[startup] FATAL: DATABASE_URL or NEON_DATABASE_URL is not set");
+    process.exit(1);
+  }
+
+  const authBase = (process.env.BETTER_AUTH_URL || "https://auth-server-production-c993.up.railway.app").replace(/\/+$/, "");
+  console.log(`[startup] BETTER_AUTH_URL: ${authBase}`);
+  console.log(`[startup] Google callback: ${authBase}/api/auth/callback/google`);
+  console.log(`[startup] GitHub callback: ${authBase}/api/auth/callback/github`);
+
   try {
     app.listen(PORT, () => {
       console.log(`
@@ -385,6 +411,7 @@ async function startServer() {
   Auth Endpoints: /api/auth/* (Better Auth)
   Profile: POST/GET /api/profile
   Health: http://localhost:${PORT}/health
+  OAuth URLs: ${authBase}/debug/oauth-urls
 ========================================
   `);
     });

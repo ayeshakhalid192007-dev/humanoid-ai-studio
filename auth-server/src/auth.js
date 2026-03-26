@@ -47,10 +47,14 @@ const trustedOrigins = [
   PRODUCTION_ORIGIN,
 ].filter((v, i, a) => a.indexOf(v) === i); // deduplicate
 
+// Sanitize base URL — ensure https:// prefix and strip trailing slash
+const rawAuthUrl = process.env.BETTER_AUTH_URL || "https://auth-server-production-c993.up.railway.app";
+const BETTER_AUTH_BASE_URL = (rawAuthUrl.startsWith("http") ? rawAuthUrl : `https://${rawAuthUrl}`).replace(/\/+$/, "");
+
 export const auth = betterAuth({
   database: pool,
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL || "https://auth-server-production-c993.up.railway.app",
+  baseURL: BETTER_AUTH_BASE_URL,
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
