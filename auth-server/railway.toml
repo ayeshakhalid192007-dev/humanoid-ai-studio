@@ -1,11 +1,7 @@
 [build]
-builder = "nixpacks"
+buildCommand = "npm ci"
 
 [deploy]
 startCommand = "node --require ./src/crypto-polyfill.cjs src/index.js"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
-
-# NODE_VERSION=20 is set in Railway env vars.
-# Node 20 exposes `crypto` as a global identifier in ESM,
-# fixing ReferenceError: crypto is not defined in @better-auth/utils.
