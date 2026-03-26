@@ -14,10 +14,12 @@
 import React from "react";
 import Layout from "@theme/Layout";
 import BrowserOnly from "@docusaurus/BrowserOnly";
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 
 function OAuthCallbackContent() {
   const { useHistory, useLocation } = require("@docusaurus/router");
   const { useAuth } = require("../../context/AuthContext");
+  const { siteConfig } = useDocusaurusContext();
 
   const history = useHistory();
   const location = useLocation();
@@ -61,7 +63,11 @@ function OAuthCallbackContent() {
       if (result.success) {
         const redirectPath = sessionStorage.getItem("auth_redirect") || "/dashboard";
         sessionStorage.removeItem("auth_redirect");
-        history.replace(redirectPath);
+        // Use window.location to ensure the base URL is always included.
+        // history.replace() from @docusaurus/router compat shim does not apply
+        // the basename (/humanoid-ai-studio/) on GitHub Pages.
+        const base = (siteConfig.baseUrl || "/").replace(/\/$/, "");
+        window.location.replace(base + (redirectPath.startsWith("/") ? redirectPath : "/" + redirectPath));
       } else {
         setErrorMessage(result.error ?? "Authentication failed. Please try again.");
         setStatus("error");
