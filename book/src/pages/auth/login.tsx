@@ -7,30 +7,37 @@
 import React from "react";
 import Layout from "@theme/Layout";
 import BrowserOnly from "@docusaurus/BrowserOnly";
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import styles from "../../components/Auth/Auth.module.css";
 
 function LoginPageContent() {
-  const { useHistory } = require("@docusaurus/router");
   const { useAuth } = require("../../context/AuthContext");
   const { LoginForm } = require("../../components/Auth");
+  const { siteConfig } = useDocusaurusContext();
 
   const { isAuthenticated, isLoading } = useAuth();
-  const history = useHistory();
+
+  // history.push() from @docusaurus/router does not apply basename on GitHub Pages.
+  // Use window.location with siteConfig.baseUrl instead.
+  const navigate = (path: string) => {
+    const base = (siteConfig.baseUrl || "/").replace(/\/$/, "");
+    window.location.replace(base + (path.startsWith("/") ? path : "/" + path));
+  };
 
   React.useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      history.push("/dashboard");
+      navigate("/dashboard");
     }
-  }, [isAuthenticated, isLoading, history]);
+  }, [isAuthenticated, isLoading]);
 
   const handleSuccess = () => {
     const redirectPath = sessionStorage.getItem("auth_redirect");
     sessionStorage.removeItem("auth_redirect");
-    history.push(redirectPath || "/dashboard");
+    navigate(redirectPath || "/dashboard");
   };
 
   const handleSwitchToSignUp = () => {
-    history.push("/auth/signup");
+    navigate("/auth/signup");
   };
 
   return (

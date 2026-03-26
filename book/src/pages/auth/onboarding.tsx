@@ -7,32 +7,29 @@
 import React from "react";
 import Layout from "@theme/Layout";
 import BrowserOnly from "@docusaurus/BrowserOnly";
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import styles from "../../components/Auth/Auth.module.css";
 
 function OnboardingPageContent() {
-  const { useHistory } = require("@docusaurus/router");
   const { useAuth } = require("../../context/AuthContext");
   const { OnboardingForm } = require("../../components/Auth");
+  const { siteConfig } = useDocusaurusContext();
 
   const { isAuthenticated, user, isLoading } = useAuth();
-  const history = useHistory();
+
+  const navigate = (path: string) => {
+    const base = (siteConfig.baseUrl || "/").replace(/\/$/, "");
+    window.location.replace(base + (path.startsWith("/") ? path : "/" + path));
+  };
 
   React.useEffect(() => {
     if (isLoading) return;
-
-    if (!isAuthenticated) {
-      history.push("/auth/login");
-      return;
-    }
-
-    if (user?.onboardingCompleted) {
-      history.push("/dashboard");
-      return;
-    }
-  }, [isAuthenticated, user, isLoading, history]);
+    if (!isAuthenticated) { navigate("/auth/login"); return; }
+    if (user?.onboardingCompleted) { navigate("/dashboard"); return; }
+  }, [isAuthenticated, user, isLoading]);
 
   const handleComplete = () => {
-    history.push("/dashboard");
+    navigate("/dashboard");
   };
 
   if (isLoading) {

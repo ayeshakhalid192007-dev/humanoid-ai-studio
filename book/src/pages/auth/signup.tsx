@@ -8,30 +8,35 @@
 import React from "react";
 import Layout from "@theme/Layout";
 import BrowserOnly from "@docusaurus/BrowserOnly";
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import styles from "../../components/Auth/Auth.module.css";
 
 function SignUpPageContent() {
-  const { useHistory } = require("@docusaurus/router");
   const { useAuth } = require("../../context/AuthContext");
   const { SignUpForm } = require("../../components/Auth");
+  const { siteConfig } = useDocusaurusContext();
 
   const { isAuthenticated, isLoading } = useAuth();
-  const history = useHistory();
+
+  const navigate = (path: string) => {
+    const base = (siteConfig.baseUrl || "/").replace(/\/$/, "");
+    window.location.replace(base + (path.startsWith("/") ? path : "/" + path));
+  };
 
   React.useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      history.push("/dashboard");
+      navigate("/dashboard");
     }
-  }, [isAuthenticated, isLoading, history]);
+  }, [isAuthenticated, isLoading]);
 
   const handleSuccess = () => {
     const redirectPath = sessionStorage.getItem("auth_redirect");
     sessionStorage.removeItem("auth_redirect");
-    history.push(redirectPath || "/dashboard");
+    navigate(redirectPath || "/dashboard");
   };
 
   const handleSwitchToLogin = () => {
-    history.push("/auth/login");
+    navigate("/auth/login");
   };
 
   return (
