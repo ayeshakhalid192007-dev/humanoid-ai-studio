@@ -21,4 +21,4 @@ jobs:
       - name: Deploy backend
         run: railway up backend --path-as-root --service backend --detach
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN2 }}

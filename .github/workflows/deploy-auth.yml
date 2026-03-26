@@ -21,4 +21,4 @@ jobs:
       - name: Deploy auth-server
         run: railway up auth-server --path-as-root --service auth-server --detach
         env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN2 }}
