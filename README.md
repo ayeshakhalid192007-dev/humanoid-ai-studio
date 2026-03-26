@@ -1,32 +1,54 @@
-# Physical AI & Humanoid Robotics Platform
+# Humanoid AI Studio
 
-An interactive learning platform featuring a Docusaurus-based curriculum book with an embedded RAG chatbot for AI-assisted learning.
+> An interactive, full-stack educational platform for Physical AI and Humanoid Robotics — powered by a RAG chatbot, OAuth2 authentication, and a live curriculum book.
 
-## Quick Start
+[![Deploy Book](https://img.shields.io/badge/Book-Netlify-00C7B7?logo=netlify)](https://netlify.com)
+[![Backend](https://img.shields.io/badge/Backend-Railway-0B0D0E?logo=railway)](https://railway.app)
+[![Auth Server](https://img.shields.io/badge/Auth-Railway-0B0D0E?logo=railway)](https://railway.app)
+[![License](https://img.shields.io/badge/License-To%20Be%20Determined-lightgrey)](#license)
 
-For detailed setup instructions, see **[quickstart.md](specs/001-book-publication-rag-chatbot/quickstart.md)**
+---
 
-## Project Overview
+## What Is This?
 
-This project follows a **Specification-Driven Development with Reusable Intelligence (SDD-RI)** methodology, ensuring every lesson, code pattern, and robot behavior is clearly specified, testable, and reusable across modules.
+**Humanoid AI Studio** is a production-grade learning platform that teaches Physical AI and Humanoid Robotics through:
 
-A comprehensive 4-module educational program that bridges AI, robotics, and physical embodiment, culminating in an autonomous humanoid robot system.
+- A **Docusaurus curriculum book** with 4 progressive modules
+- An **embedded RAG chatbot** (Retrieval-Augmented Generation) that answers questions from the curriculum
+- **OAuth2 social login** (Google, GitHub) via Better Auth
+- **AI-powered personalization** — generate custom chapters in Urdu or other languages
+- Full **observability**, **rate limiting**, and **cloud deployment** on Railway + Netlify
 
-### Constitution
+The platform follows **Spec-Driven Development with Reusable Intelligence (SDD-RI)** methodology — every feature is specified, planned, tested, and documented before it is built.
 
-The project is governed by a constitution at `.specify/memory/constitution.md` (v1.2.0) that establishes:
-- **6 Core Principles**: Reasoning-First Learning, System-Oriented Architecture, Python-ROS 2 Bridge Patterns, Interactive Verification, Modularity and Scalability, SDD-RI
-- **Comprehensive Governance**: Principle hierarchy, enforcement mechanisms, testing standards, stakeholder participation
-- **Cross-Module Standards**: Learning outcomes (LO-001 to LO-303), pattern versioning, observable outcome requirements
+---
 
-## Curriculum
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| **Frontend Book** | Docusaurus 3.6, React 18, TypeScript, Tailwind CSS, Framer Motion |
+| **RAG Backend** | FastAPI (Python 3.11), Uvicorn, Pydantic V2 |
+| **Auth Server** | Express.js 4, Better Auth, Node.js 20 |
+| **LLM** | Google Gemini API (primary), OpenAI API (fallback embeddings) |
+| **Vector DB** | Qdrant Cloud (curriculum embeddings, cosine similarity search) |
+| **Relational DB** | Neon Serverless Postgres (sessions, user profiles, conversation history) |
+| **Cache** | Redis (optional, for token caching and rate limiting) |
+| **Embeddings** | Sentence Transformers — `all-MiniLM-L6-v2` (local, free) |
+| **Deployment** | Railway (backend + auth), Netlify (book frontend) |
+| **Containers** | Docker (backend + auth-server) |
+| **Observability** | OpenTelemetry, Prometheus, structured JSON logging |
+
+---
+
+## Curriculum — 4 Modules
 
 ### Module 1: The Robotic Nervous System (ROS 2)
 **Focus**: Middleware for robot control
 
 - ROS 2 Nodes, Topics, and Services
-- Bridging Python Agents to ROS controllers using `rclpy`
-- Understanding URDF (Unified Robot Description Format) for humanoids
+- Bridging Python Agents to ROS controllers via `rclpy`
+- URDF (Unified Robot Description Format) for humanoids
 
 **Learning Outcomes**:
 - LO-001: Predict message flow through ROS 2 graphs
@@ -35,8 +57,6 @@ The project is governed by a constitution at `.specify/memory/constitution.md` (
 - LO-004: Reason about URDF joint limits and workspace constraints
 - LO-005: Explain when to use topics vs services vs action servers
 
-**Pattern Library**: `/specs/module-1-ros2/patterns/`
-
 ---
 
 ### Module 2: The Digital Twin (Gazebo & Unity)
@@ -44,201 +64,302 @@ The project is governed by a constitution at `.specify/memory/constitution.md` (
 
 - Simulating physics, gravity, and collisions in Gazebo
 - High-fidelity rendering and human-robot interaction in Unity
-- Simulating sensors: LiDAR, Depth Cameras, and IMUs
+- Simulating sensors: LiDAR, Depth Cameras, IMUs
 
 **Learning Outcomes**:
 - LO-101: Configure sensor plugins and predict sensor output formats
 - LO-102: Debug physics simulation failures (collision, gravity, friction)
 - LO-103: Transfer Module 1 ROS 2 nodes to simulated environments
 
-**Pattern Library**: `/specs/module-2-simulation/patterns/`
-
 ---
 
-### Module 3: The AI-Robot Brain (NVIDIA Isaac™)
+### Module 3: The AI-Robot Brain (NVIDIA Isaac)
 **Focus**: Advanced perception and training
 
-- NVIDIA Isaac Sim: Photorealistic simulation and synthetic data generation
-- Isaac ROS: Hardware-accelerated VSLAM (Visual SLAM) and navigation
-- Nav2: Path planning for bipedal humanoid movement
+- NVIDIA Isaac Sim — photorealistic simulation and synthetic data generation
+- Isaac ROS — hardware-accelerated VSLAM and navigation
+- Nav2 — path planning for bipedal humanoid movement
 
 **Learning Outcomes**:
 - LO-201: Generate synthetic training data and validate against real-world distributions
 - LO-202: Configure and debug VSLAM pipeline failures
 - LO-203: Implement Nav2 path planning for bipedal constraints
 
-**Pattern Library**: `/specs/module-3-isaac/patterns/`
-
 ---
 
 ### Module 4: Vision-Language-Action (VLA)
 **Focus**: Convergence of LLMs and Robotics
 
-- Voice-to-Action: Using OpenAI Whisper for voice commands
-- Cognitive Planning: Translating natural language instructions into ROS 2 action sequences
-- **Capstone Project**: Autonomous Humanoid – simulated robot executes voice commands, plans paths, navigates obstacles, identifies objects, and manipulates them
+- Voice-to-Action using OpenAI Whisper
+- Cognitive planning — translating natural language into ROS 2 action sequences
+- **Capstone**: Autonomous Humanoid that executes voice commands, plans paths, navigates obstacles, and manipulates objects
 
 **Learning Outcomes**:
 - LO-301: Decompose natural language commands into ROS 2 action sequences
 - LO-302: Integrate voice → perception → planning → manipulation pipeline
 - LO-303: Evaluate end-to-end system performance against voice command accuracy
 
-**Pattern Library**: `/specs/module-4-vla/patterns/`
+---
+
+## Architecture
+
+```
+humanoid-ai-studio/
+├── book/                    # Docusaurus 3 frontend (React, TypeScript, Tailwind)
+│   ├── docs/                # Curriculum markdown (modules 1–4, capstone)
+│   └── src/                 # React components, pages, context, plugins
+│
+├── backend/                 # FastAPI RAG backend (Python 3.11)
+│   ├── src/
+│   │   ├── api/             # Endpoints: chat, personalize, translate, sessions, auth
+│   │   ├── ai/              # Gemini client, orchestrator, RAG/personalization/translation agents
+│   │   ├── db/              # Qdrant (vector) + Neon Postgres clients
+│   │   ├── models/          # Pydantic schemas
+│   │   └── utils/           # Logging, monitoring, rate limiting
+│   └── main.py              # FastAPI app entry point
+│
+├── auth-server/             # Better Auth server (Node.js, Express)
+│   └── src/
+│       ├── index.js         # Express + Better Auth setup
+│       └── auth.js          # OAuth2/OIDC authentication logic
+│
+├── specs/                   # SDD-RI feature specs (spec.md, plan.md, tasks.md)
+├── history/                 # Prompt History Records + Architecture Decision Records
+└── .specify/                # SDD templates, scripts, project constitution
+```
+
+---
+
+## Key Features
+
+### RAG Chatbot
+- Embedded chat widget in the book UI (bottom-right)
+- Retrieves curriculum chunks from Qdrant using cosine similarity
+- Answers questions contextually using Google Gemini
+- Supports **text selection → "Ask about this"** workflow
+- SSE (Server-Sent Events) for streaming responses
+- Rate limiting: 20 queries/hour per user (configurable)
+
+### OAuth2 Authentication
+- Social login (Google, GitHub) via Better Auth
+- JWT access token validation
+- Secure cross-domain session management with credential relay
+- User profiles stored in Neon Postgres
+
+### AI Personalization
+- Generate custom chapters in Urdu or other languages on demand
+- Translation endpoint for curriculum content
+- Multi-agent orchestration via skill pipeline
+
+### Observability
+- Structured JSON logging (Python JSON Logger)
+- OpenTelemetry distributed tracing
+- Prometheus metrics export
+- Health check endpoints on all services
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+| Requirement | Version |
+|---|---|
+| Node.js | 18+ |
+| Python | 3.11+ |
+| Docker | Latest |
+| Ubuntu | 22.04 LTS (recommended) |
+| GPU (Module 3+) | NVIDIA GPU with 6GB+ VRAM |
+
+For detailed environment setup, see **[quickstart.md](specs/001-book-publication-rag-chatbot/quickstart.md)**.
+
+### Environment Variables
+
+Copy `.env.example` to `.env` and fill in:
+
+```env
+# LLM
+GEMINI_API_KEY=your_gemini_key
+OPENAI_API_KEY=your_openai_key_fallback
+
+# Databases
+QDRANT_URL=https://your-cluster.qdrant.io
+QDRANT_API_KEY=your_qdrant_key
+DATABASE_URL=postgresql://user:pass@host/db
+
+# Auth
+BETTER_AUTH_SECRET=your_secret
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# App
+CORS_ORIGINS=http://localhost:3000
+RATE_LIMIT_QUERIES_PER_HOUR=20
+```
+
+### Run Locally
+
+```bash
+# 1. Start the RAG backend
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+
+# 2. Start the auth server
+cd auth-server
+npm install
+npm start
+
+# 3. Start the book
+cd book
+npm install
+npm start
+```
+
+---
+
+## Deployment
+
+| Service | Platform | Notes |
+|---|---|---|
+| Book (frontend) | Netlify | Auto-deploys from `book/` changes |
+| RAG Backend | Railway | Docker-based, health check on `/health` |
+| Auth Server | Railway | Docker-based, health check on `/health` |
+
+### Railway Deployment
+
+Both `backend/` and `auth-server/` include `railway.toml` and `Dockerfile`. Push to your Railway project and set environment variables in the Railway dashboard.
+
+### Netlify Deployment
+
+The `book/` directory is configured for Netlify. Set build command to `npm run build` and publish directory to `build/`.
 
 ---
 
 ## Pedagogical Approach
 
 ### Reasoning-First Learning (NON-NEGOTIABLE)
+
 Every lesson follows the **Prediction → Execution → Reflection** cycle:
 
-1. **Prediction Phase**: "Before running, what will this node publish?"
-2. **Execution Phase**: Run code, capture output
-3. **Reflection Phase**: "Did output match prediction? Why/why not?"
-4. **Extension Challenge**: Modify code to achieve new behavior
+1. **Prediction Phase** — "Before running, what will this node publish?"
+2. **Execution Phase** — Run code, capture output
+3. **Reflection Phase** — "Did output match prediction? Why/why not?"
+4. **Extension Challenge** — Modify code to achieve new behavior
 
-**Why?** Passive tutorials fail to build intuition. Active prediction improves retention by 30-50% and engages higher-order thinking (Bloom's Taxonomy: Analysis and Evaluation levels).
+Active prediction improves retention by 30–50% and engages higher-order thinking (Bloom's Taxonomy: Analysis and Evaluation levels).
 
-### System-Oriented Architecture
-ROS 2 is taught as an integrated **nervous system**:
-- **Nodes** = neural pathways (message producers/consumers)
-- **Topics** = sensory/motor signals
-- **Services** = deliberate control actions
-- **URDF** = structural blueprint connecting physical and logical layers
+### Observable Outcome Standards
 
-### Interactive Verification
-All concepts include:
-- Executable code snippets (students run them)
-- Observable outcomes (terminal output, robot motion, RViz visualization)
-- Prediction checkpoints ("What will happen when...")
-- Error scenarios and debugging guidance
+Predictions must be verifiable and measurable:
 
-## Standard Testing Environment
+| Type | Example |
+|---|---|
+| Quantitative | Joint position ±2°, execution time ±0.5s, message rate ±10% |
+| Visual | RViz shows expected robot state |
+| Logs | Terminal output matches predicted message structure |
+
+**Rejected** (too vague):
+- "The robot moves"
+- "Output appears in terminal"
+
+**Accepted**:
+- "Right arm joint 3 rotates to 45° ±2° in 2.0s ±0.5s"
+- "Terminal prints: `[INFO] [joint_controller]: Target reached` within 3 seconds"
+
+---
+
+## Testing Environment
 
 All code is validated against:
-- **OS**: Ubuntu 22.04 LTS (Jammy)
+
+- **OS**: Ubuntu 22.04 LTS
 - **ROS 2**: Humble Hawksbill (LTS, supported until 2027)
 - **Gazebo**: Gazebo 11 (Module 2)
 - **Isaac Sim**: NVIDIA Isaac Sim 2023.1.1 (Module 3)
 - **Python**: 3.10+
-- **Hardware**: NVIDIA GPU with 6GB+ VRAM, 16GB system RAM
 
-**Testing Protocol**:
+**Protocol**:
 1. Fresh Docker container: `osrf/ros:humble-desktop-full`
 2. Install only documented dependencies
 3. Execute all code snippets in lesson order
 4. Verify predictions match outcomes (screenshot/log comparison)
-5. Document deviations with reproduction steps
 
-## Observable Outcome Standards
+---
 
-Predictions must be verifiable:
-- **Quantitative**: Joint position ±2°, execution time ±0.5s, message rate ±10%
-- **Visual**: RViz visualization shows expected robot state
-- **Logs**: Terminal output matches predicted message structure
-- **Failure modes**: Document 2-3 common errors with diagnostic signatures
+## Development Methodology (SDD-RI)
 
-**Rejected examples** (too vague):
-- ❌ "The robot moves"
-- ❌ "Check if it works"
-- ❌ "Output appears in terminal"
-
-**Acceptable examples**:
-- ✅ "Right arm joint 3 rotates to 45° ±2° in 2.0s ±0.5s"
-- ✅ "RViz shows gripper open (joint value > 0.08m)"
-- ✅ "Terminal prints: `[INFO] [joint_controller]: Target reached` within 3 seconds"
-
-## Project Structure
+This project follows **Spec-Driven Development with Reusable Intelligence**:
 
 ```
-physical_ai/
-├── .specify/
-│   ├── memory/
-│   │   └── constitution.md           # Project governance (v1.2.0)
-│   ├── templates/                     # Spec, plan, tasks templates
-│   └── scripts/                       # Automation scripts
-├── specs/
-│   ├── module-1-ros2/
-│   │   ├── patterns/                  # Reusable agent patterns
-│   │   ├── spec.md                    # Feature specifications
-│   │   ├── plan.md                    # Architecture decisions
-│   │   └── tasks.md                   # Testable tasks
-│   ├── module-2-simulation/
-│   ├── module-3-isaac/
-│   └── module-4-vla/
-├── history/
-│   ├── prompts/
-│   │   └── constitution/              # Constitution amendment PHRs
-│   └── adr/                           # Architecture Decision Records
-└── README.md                          # This file
+Specify → Plan → Tasks → Implement → Validate → Record
 ```
 
-## Getting Started
+Every feature has:
+- `spec.md` — requirements and acceptance criteria
+- `plan.md` — architecture decisions and rationale
+- `tasks.md` — testable implementation tasks
+- PHR (Prompt History Record) — AI exchange logs for traceability
+- ADR (Architecture Decision Record) — significant decisions with rationale
 
 ### For Students
-1. **Prerequisites**: Ubuntu 22.04, ROS 2 Humble installed
-2. **Start with Module 1**: Begin with `specs/module-1-ros2/lesson-01/`
-3. **Follow prediction-execution-reflection cycle** for every lesson
-4. **Build pattern library** as you progress
+1. Prerequisites: Ubuntu 22.04, ROS 2 Humble installed
+2. Start with Module 1: `specs/module-1-ros2/`
+3. Follow the prediction-execution-reflection cycle for every lesson
 
 ### For Instructors
-1. **Review constitution**: `.specify/memory/constitution.md`
-2. **Use templates**: `/sp.specify` for specs, `/sp.plan` for architecture, `/sp.tasks` for task breakdown
-3. **Report issues**: GitHub issue tracker with `pedagogy` label
-4. **Quarterly feedback**: Complete student surveys to assess principle effectiveness
+1. Review constitution: `.specify/memory/constitution.md`
+2. Use templates: `/sp.specify` (specs), `/sp.plan` (architecture), `/sp.tasks` (tasks)
+3. Report issues via GitHub issue tracker with `pedagogy` label
 
 ### For Contributors
-1. **Read governance**: Constitution Section "Enforcement and Accountability"
-2. **Follow SDD-RI**: Specify → Plan → Implement → Validate
-3. **Document patterns**: All Python-ROS 2 bridges must be reusable
-4. **Validate in Standard Testing Environment** before submitting
+1. Read governance: Constitution → Enforcement and Accountability section
+2. Follow SDD-RI: Specify → Plan → Implement → Validate
+3. Validate in Standard Testing Environment before submitting
 
-## Governance
+---
+
+## Project Governance
 
 **Review Authority**: Designated curriculum maintainers (minimum 2) with veto power
 
 **Violation Response**:
 - **Minor** (formatting, unclear wording): 7-day fix window
 - **Major** (missing prediction checkpoints, untested code): Blocked from release
-- **Repeat**: Contributor escalation to project governance
+- **Repeat**: Escalation to project governance
 
-**Appeals Process**: Document conflict → Propose alternative → 75% maintainer consensus
-
-**Emergency Authority**: For security/safety/legal issues, single maintainer can fast-track changes (retroactive 14-day review)
-
-## Stakeholder Participation
-
-- **Student Feedback**: Quarterly surveys
-- **Industry Advisory**: Annual review (Boston Dynamics, NVIDIA, Tesla practitioners)
-- **Instructor Input**: GitHub issue tracker (`pedagogy` label)
-- **Amendment Proposals**: Any stakeholder can propose via GitHub issue
-
-## Principle Hierarchy (Conflict Resolution)
-
-When principles conflict:
-1. **Reasoning-First Learning (I)** - NON-NEGOTIABLE
-2. **Interactive Verification (IV)** - Core pedagogy
-3. **System-Oriented Architecture (II)** - Conceptual foundation
-4. **Modularity and Scalability (V)** - Structural requirement
-5. **Python-ROS 2 Bridge Patterns (III)** - Implementation detail
-6. **SDD-RI (VI)** - Documentation standard
-
-Unresolvable conflicts → Escalate to constitution amendment.
-
-## Version History
-
-- **v1.2.0** (2026-02-07): Added comprehensive governance framework (enforcement, testing standards, stakeholder participation)
-- **v1.1.0** (2026-02-07): Added 4-module curriculum overview
-- **v1.0.0** (2026-02-07): Initial constitution with 6 core principles
-
-## License
-
-[To be determined by project maintainers]
-
-## Contact
-
-[To be added: Maintainer contact information, Discord/Slack community links]
+**Principle Hierarchy** (conflict resolution):
+1. Reasoning-First Learning — NON-NEGOTIABLE
+2. Interactive Verification — Core pedagogy
+3. System-Oriented Architecture — Conceptual foundation
+4. Modularity and Scalability — Structural requirement
+5. Python-ROS 2 Bridge Patterns — Implementation detail
+6. SDD-RI — Documentation standard
 
 ---
 
-**Constitution Version**: 1.2.0 | **Last Updated**: 2026-02-07
+## Version History
+
+| Version | Date | Changes |
+|---|---|---|
+| v1.2.0 | 2026-02-07 | Added comprehensive governance framework |
+| v1.1.0 | 2026-02-07 | Added 4-module curriculum overview |
+| v1.0.0 | 2026-02-07 | Initial constitution with 6 core principles |
+
+---
+
+## License
+
+To be determined by project maintainers.
+
+---
+
+## Contact
+
+Maintainer contact information and community links to be added.
+
+**Constitution Version**: 1.2.0 | **Last Updated**: 2026-03-27
+
+---
+
+> **DEVELOP AND DEPLOY THIS SO IT WILL BE BENEFICIAL FOR EVERYONE**
