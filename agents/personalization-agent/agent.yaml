@@ -1,0 +1,25 @@
+spec_version: "0.1.0"
+name: personalization-agent
+version: 1.0.0
+description: Generates personalized curriculum chapter versions adapted to learner skill level, background, and language preference (including Urdu RTL)
+license: MIT
+
+model:
+  preferred: claude-sonnet-4-6
+  constraints:
+    temperature: 0.4
+    max_tokens: 8192
+
+skills:
+  - personalize-chapter
+  - translate-urdu
+
+runtime:
+  max_turns: 5
+  timeout: 120
+
+tags:
+  - personalization
+  - education
+  - urdu
+  - multilingual

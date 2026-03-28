@@ -8,6 +8,7 @@
 [![Backend](https://img.shields.io/badge/Backend-Railway-0B0D0E?style=for-the-badge&logo=railway)](https://railway.app)
 [![Auth Server](https://img.shields.io/badge/Auth-Railway-0B0D0E?style=for-the-badge&logo=railway)](https://railway.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](./LICENSE)
+[![gitagent](https://img.shields.io/badge/gitagent-0.1.0-6D28D9?style=for-the-badge)](https://gitagent.sh)
 
 <br/>
 
@@ -301,6 +302,77 @@ For detailed setup, see **[quickstart.md](specs/001-book-publication-rag-chatbot
 
 ---
 
+## 🤖 AI Agent Architecture (gitagent)
+
+Humanoid AI Studio uses [**gitagent**](https://gitagent.sh) — a framework-agnostic, git-native standard for defining AI agents. The agent is version-controlled alongside the codebase, exportable to any LLM framework, and composable across skills.
+
+```bash
+# Export the agent as a system prompt (works with any LLM)
+npx gitagent export --format system-prompt
+
+# Export as Claude Code CLAUDE.md
+npx gitagent export --format claude-code
+
+# Validate agent configuration
+npx gitagent validate
+
+# View agent info
+npx gitagent info
+```
+
+### Agent Structure
+
+```mermaid
+graph TB
+    subgraph Agent["humanoid-ai-studio agent"]
+        SOUL["SOUL.md\nAria — AI tutor identity"]
+        RULES["RULES.md\nSafety & content boundaries"]
+        AGENTS["AGENTS.md\nSub-agent delegation map"]
+        YAML["agent.yaml\nModel, skills, runtime config"]
+    end
+
+    subgraph Skills["skills/"]
+        S1["rag-tutor\nCurriculum Q&A via Qdrant"]
+        S2["personalize-chapter\nAdaptive chapter generation"]
+        S3["translate-urdu\nRTL Urdu translation"]
+        S4["ros2-guide\nROS 2 Humble step-by-step"]
+        S5["code-explainer\nRobotics code walkthrough"]
+    end
+
+    subgraph Knowledge["knowledge/"]
+        K["index.yaml\nCurriculum + spec document registry"]
+    end
+
+    YAML --> Skills
+    SOUL --> YAML
+    RULES --> YAML
+    AGENTS --> YAML
+    Skills --> Knowledge
+```
+
+### Skills
+
+| Skill | Purpose | Trigger |
+|---|---|---|
+| `rag-tutor` | Answers curriculum questions via Qdrant + Gemini RAG | Any factual robotics question |
+| `personalize-chapter` | Rewrites chapters for learner's background + language | "Personalize this chapter" |
+| `translate-urdu` | Translates prose to Urdu RTL, preserves all code | "Translate to Urdu" |
+| `ros2-guide` | Step-by-step ROS 2 Humble Hawksbill guidance | ROS 2 how-to questions |
+| `code-explainer` | Explains robotics Python/YAML/SDF code line by line | "Explain this code" / debug requests |
+
+### Sub-Agents
+
+```mermaid
+graph LR
+    O["Orchestrator\nhumanoid-ai-studio"]
+    O -->|"curriculum question"| R["rag-tutor\nQdrant + Gemini SSE"]
+    O -->|"personalize request"| P["personalization-agent\nProfile + RAG + Gemini"]
+    O -->|"translate request"| T["translation-agent\nUrdu RTL output"]
+    O -->|"auth / session"| A["auth-agent\nBetter-Auth OIDC"]
+```
+
+---
+
 ## 📁 Project Structure
 
 ```
@@ -323,6 +395,12 @@ humanoid-ai-studio/
 │       ├── index.js         # Express + Better Auth setup
 │       └── auth.js          # OAuth2/OIDC authentication logic
 │
+├── agent.yaml               # gitagent manifest — model, skills, runtime config
+├── SOUL.md                  # Agent identity (Aria — the AI tutor)
+├── RULES.md                 # Agent safety and content boundaries
+├── AGENTS.md                # Sub-agent delegation architecture
+├── skills/                  # Reusable AI skill modules (rag-tutor, ros2-guide, etc.)
+├── knowledge/               # Curriculum document registry for RAG
 ├── specs/                   # SDD-RI feature specs (spec.md, plan.md, tasks.md)
 ├── history/                 # Prompt History Records + Architecture Decision Records
 └── .specify/                # SDD templates, scripts, project constitution

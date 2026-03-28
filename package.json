@@ -1,0 +1,27 @@
+{
+  "name": "humanoid-ai-studio",
+  "version": "1.0.0",
+  "description": "<div align=\"center\">",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ayeshakhalid192007-dev/humanoid-ai-studio.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ayeshakhalid192007-dev/humanoid-ai-studio/issues"
+  },
+  "homepage": "https://github.com/ayeshakhalid192007-dev/humanoid-ai-studio#readme",
+  "dependencies": {
+    "@open-gitagent/gitagent": "^0.1.7"
+  }
+}

@@ -1,0 +1,25 @@
+spec_version: "0.1.0"
+name: rag-tutor
+version: 1.0.0
+description: Retrieval-Augmented Generation tutor that answers curriculum questions via Qdrant vector search and Google Gemini streaming
+license: MIT
+
+model:
+  preferred: claude-sonnet-4-6
+  constraints:
+    temperature: 0.2
+    max_tokens: 4096
+
+skills:
+  - rag-tutor
+
+runtime:
+  max_turns: 10
+  timeout: 60
+
+tags:
+  - rag
+  - education
+  - robotics
+  - qdrant
+  - gemini
