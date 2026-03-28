@@ -1,0 +1,82 @@
+spec_version: "0.1.0"
+name: humanoid-ai-studio
+version: 1.0.0
+description: AI-native educational agent for Physical AI and Humanoid Robotics — RAG tutor, personalization, and Urdu translation for the Humanoid AI Studio platform
+author: Ayesha Khalid
+license: MIT
+
+model:
+  preferred: claude-sonnet-4-6
+  fallback:
+    - claude-haiku-4-5-20251001
+  constraints:
+    temperature: 0.3
+    max_tokens: 8192
+    top_p: 0.9
+
+skills:
+  - rag-tutor
+  - personalize-chapter
+  - translate-urdu
+  - ros2-guide
+  - code-explainer
+
+runtime:
+  max_turns: 50
+  timeout: 180
+
+agents:
+  rag-tutor:
+    description: Retrieval-augmented generation tutor that answers learner questions directly from the Humanoid AI Studio curriculum using Qdrant vector search and Google Gemini streaming
+    delegation:
+      mode: auto
+      triggers:
+        - curriculum_question_detected
+        - text_selection_query
+        - factual_claim_detected
+  personalization-agent:
+    description: Generates personalized chapter versions adapted to learner skill level (software background, hardware background, robotics knowledge). Supports Urdu + custom language output
+    delegation:
+      mode: explicit
+      triggers:
+        - personalization_requested
+        - language_preference_set
+  translation-agent:
+    description: Translates curriculum content to Urdu (RTL) or other languages. Code blocks are always preserved untranslated
+    delegation:
+      mode: explicit
+      triggers:
+        - translation_requested
+
+delegation:
+  mode: auto
+
+a2a:
+  capabilities:
+    - rag-question-answering
+    - curriculum-personalization
+    - urdu-translation
+    - ros2-guidance
+    - code-explanation
+  protocols:
+    - a2a
+
+tags:
+  - education
+  - robotics
+  - physical-ai
+  - rag
+  - humanoid
+  - ros2
+  - personalization
+  - urdu
+
+metadata:
+  platform: humanoid-ai-studio
+  curriculum_modules: "4"
+  llm_primary: google-gemini
+  vector_db: qdrant
+  embedding_model: all-MiniLM-L6-v2
+  deployment_backend: railway
+  deployment_frontend: netlify
+  auth_provider: better-auth

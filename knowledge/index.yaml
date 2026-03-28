@@ -1,0 +1,84 @@
+documents:
+  - id: intro
+    title: Course Introduction — Physical AI and Humanoid Robotics
+    path: book/docs/intro.md
+    type: curriculum
+    tags: [introduction, overview, learning-path]
+
+  - id: module1-overview
+    title: Module 1 — ROS 2 Fundamentals
+    path: book/docs/module1
+    type: curriculum
+    tags: [ros2, humble, nodes, topics, services, launch, tf2]
+
+  - id: module2-overview
+    title: Module 2 — Simulation with Gazebo
+    path: book/docs/module2
+    type: curriculum
+    tags: [gazebo, simulation, sdf, ros-gz-bridge, sensors]
+
+  - id: module3-overview
+    title: Module 3 — NVIDIA Isaac Sim
+    path: book/docs/module3
+    type: curriculum
+    tags: [isaac-sim, omniverse, synthetic-data, isaac-ros, gpu]
+
+  - id: module4-overview
+    title: Module 4 — VLA Capstone
+    path: book/docs/module4
+    type: curriculum
+    tags: [vla, lerobot, imitation-learning, teleop, vision-language-action]
+
+  - id: capstone
+    title: Capstone — Autonomous Humanoid Project
+    path: book/docs/capstone
+    type: curriculum
+    tags: [capstone, autonomous, humanoid, integration]
+
+  - id: lab-architecture
+    title: Lab Architecture — Environment Setup
+    path: book/docs/lab-architecture
+    type: reference
+    tags: [setup, environment, ubuntu, ros2-humble, dependencies]
+
+  - id: rag-chatbot-spec
+    title: RAG Chatbot Feature Specification
+    path: specs/001-book-publication-rag-chatbot/spec.md
+    type: spec
+    tags: [rag, chatbot, qdrant, gemini, streaming]
+
+  - id: personalization-spec
+    title: Personalized Chapters + Urdu Translation Specification
+    path: specs/002-personalized-chapters-urdu/spec.md
+    type: spec
+    tags: [personalization, urdu, translation, skill-level]
+
+  - id: oauth-spec
+    title: OAuth2 Social Login Specification
+    path: specs/1-oauth-social-login/spec.md
+    type: spec
+    tags: [oauth2, better-auth, google, github, jwt]
+
+  - id: api-contracts
+    title: Backend API Contracts
+    path: specs/001-book-publication-rag-chatbot/contracts/api-contracts.md
+    type: reference
+    tags: [api, contracts, endpoints, chat, personalize, translate]
+
+  - id: platform-spec
+    title: Physical AI Robotics Platform Specification
+    path: specs/001-physical-ai-robotics-platform/spec.md
+    type: spec
+    tags: [platform, architecture, physical-ai, humanoid]
+
+  - id: intelligence-architecture
+    title: Reusable Intelligence Architecture
+    path: specs/003-reusable-intelligence-architecture
+    type: spec
+    tags: [agents, skills, orchestrator, multi-agent, pipeline]
+
+  - id: gemini-setup
+    title: Gemini AI Setup Guide
+    path: gemini.md
+    type: reference
+    tags: [gemini, google-ai, setup, api-key]

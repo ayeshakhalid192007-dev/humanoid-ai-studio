@@ -1,0 +1,25 @@
+spec_version: "0.1.0"
+name: translation-agent
+version: 1.0.0
+description: Translates Humanoid AI Studio curriculum content to Urdu (RTL) and other languages while preserving all code blocks, ROS 2 package names, and CLI commands
+license: MIT
+
+model:
+  preferred: claude-sonnet-4-6
+  constraints:
+    temperature: 0.1
+    max_tokens: 8192
+
+skills:
+  - translate-urdu
+
+runtime:
+  max_turns: 5
+  timeout: 90
+
+tags:
+  - translation
+  - urdu
+  - rtl
+  - multilingual
+  - education
